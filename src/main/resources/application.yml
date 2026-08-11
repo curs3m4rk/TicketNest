@@ -1,1 +1,10 @@
-spring.application.name=ticketnest
+spring:
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5432/ticketnest
+    username: ticketnest
+    password: ticketnest_Admin
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
