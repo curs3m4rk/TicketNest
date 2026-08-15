@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -28,6 +30,12 @@ public class User {
 
     @Column(nullable = false)
     private boolean active = true;
+
+    @OneToMany(mappedBy = "user")
+    private List<Booking> bookings = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user")
+    private List<Notification> notifications = new ArrayList<>();
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;

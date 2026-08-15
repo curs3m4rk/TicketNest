@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -20,6 +22,9 @@ public class Show {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "venue_id", nullable = false)
     private Venue venue;
+
+    @OneToMany(mappedBy = "show")
+    private List<Booking> bookings = new ArrayList<>();
 
     @Column(nullable = false)
     private String title;
