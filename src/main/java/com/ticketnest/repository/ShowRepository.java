@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface ShowRepository extends JpaRepository<Show, UUID> {
@@ -25,4 +26,19 @@ public interface ShowRepository extends JpaRepository<Show, UUID> {
             @Param("startTime") Instant startTime,
             @Param("endTime") Instant endTime
     );
+
+    @Query("""
+        SELECT s
+        FROM Show s
+        JOIN FETCH s.venue
+    """)
+    List<Show> findAllWithVenue();
+
+    @Query("""
+        SELECT s
+        FROM Show s
+        JOIN FETCH s.venue
+        WHERE s.id = :id
+    """)
+    Optional<Show> findByIdWithVenue(@Param("id") UUID id);
 }
