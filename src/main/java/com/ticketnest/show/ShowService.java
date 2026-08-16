@@ -6,6 +6,7 @@ import com.ticketnest.repository.ShowRepository;
 import com.ticketnest.repository.VenueRepository;
 import com.ticketnest.show.dto.ShowRequest;
 import com.ticketnest.show.dto.ShowResponse;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -37,16 +38,15 @@ public class ShowService {
 
     /** Returns a single show by ID with venue and seat tiers. Throws if not found. */
     public ShowResponse getShow(UUID id) {
-        Show show = showRepository.findByIdWithVenue(id)
-                .orElseThrow(() -> new RuntimeException("Show with id " + id + " not found"));
-
-        return toResponse(show);
+        return showRepository.findByIdWithVenue(id)
+                .map(this::toResponse)
+                .orElseThrow(() -> new EntityNotFoundException("Show with id " + id + " not found"));
     }
 
     /** Creates a show linked to an existing venue. Returns created show with venue + seat tiers. */
     public ShowResponse createShow(ShowRequest request) {
         Venue venue = venueRepository.findById(request.venueId())
-                .orElseThrow(() -> new RuntimeException("Venue with id " + request.venueId() + " not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Venue with id " + request.venueId() + " not found"));
 
         Show show = new Show();
         show.setVenue(venue);
@@ -63,10 +63,10 @@ public class ShowService {
     /** Updates show fields (including venue reassignment). Returns updated show with venue + seat tiers. */
     public ShowResponse updateShow(UUID id, ShowRequest request) {
         Show show = showRepository.findByIdWithVenue(id)
-                .orElseThrow(() -> new RuntimeException("Show with id " + id + " not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Show with id " + id + " not found"));
 
         Venue venue = venueRepository.findById(request.venueId())
-                .orElseThrow(() -> new RuntimeException("Venue with id " + request.venueId() + " not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Venue with id " + request.venueId() + " not found"));
 
         show.setVenue(venue);
         show.setTitle(request.title());
@@ -77,15 +77,15 @@ public class ShowService {
 
         showRepository.save(show);
         // Reload with venue eagerly fetched to avoid LazyInitializationException on new venue
-        Show reloaded = showRepository.findByIdWithVenue(id)
-                .orElseThrow(() -> new RuntimeException("Show with id " + id + " not found after update"));
-        return toResponse(reloaded);
+        return showRepository.findByIdWithVenue(id)
+                .map(this::toResponse)
+                .orElseThrow(() -> new EntityNotFoundException("Show with id " + id + " not found after update"));
     }
 
     /** Deletes show if it exists. Throws if not found. */
     public void deleteShow(UUID id) {
         if (!showRepository.existsById(id)) {
-            throw new RuntimeException("Show with id " + id + " not found");
+            throw new EntityNotFoundException("Show with id " + id + " not found");
         }
         showRepository.deleteById(id);
     }

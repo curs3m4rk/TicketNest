@@ -4,6 +4,7 @@ import com.ticketnest.entity.Venue;
 import com.ticketnest.repository.VenueRepository;
 import com.ticketnest.venue.dto.VenueRequest;
 import com.ticketnest.venue.dto.VenueResponse;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -33,9 +34,9 @@ public class VenueService {
 
     /** Returns a single venue by ID with seat tiers. Throws if not found. */
     public VenueResponse getVenue(UUID id) {
-        Venue venue = venueRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Venue with id " + id + " not found"));
-        return toResponse(venue);
+        return venueRepository.findById(id)
+                .map(this::toResponse)
+                .orElseThrow(() -> new EntityNotFoundException("Venue with id " + id + " not found"));
     }
 
     /** Creates a new venue (active by default) and returns it with seat tiers. */
@@ -53,7 +54,7 @@ public class VenueService {
     /** Updates venue fields and returns updated venue with seat tiers. */
     public VenueResponse updateVenue(UUID id, VenueRequest request) {
         Venue venue = venueRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Venue with id " + id + " not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Venue with id " + id + " not found"));
         venue.setName(request.name());
         venue.setCity(request.city());
         venue.setAddress(request.address());
@@ -65,7 +66,7 @@ public class VenueService {
     /** Deletes venue if it exists. Throws if not found. */
     public void deleteVenue(UUID id) {
         if (!venueRepository.existsById(id)) {
-            throw new RuntimeException("Venue with id " + id + " not found");
+            throw new EntityNotFoundException("Venue with id " + id + " not found");
         }
         venueRepository.deleteById(id);
     }
