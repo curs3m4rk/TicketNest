@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://127.0.0.1:5432/ticketnest
+    url: jdbc:postgresql://127.0.0.1:5432/ticketnest?currentSchema=public&timezone=UTC
     username: ticketnest
     password: ticketnest_Admin
 
@@ -9,6 +9,10 @@ spring:
       ddl-auto: update
     show-sql: true
     open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
 
 spring doc:
   swagger-ui:

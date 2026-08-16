@@ -6,43 +6,33 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.util.TimeZone;
 
 @SpringBootApplication
 public class TicketnestApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(TicketnestApplication.class, args);
-	}
+    static {
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+    }
 
-	@Bean
-	CommandLineRunner testShowQuery(ShowRepository showRepository) {
-		return args -> {
-			ZoneId zone = ZoneId.of("Asia/Kolkata");
-			
-			Instant start = LocalDate
-					.of(2026, 8, 16)
-					.atStartOfDay(zone)
-					.toInstant();
+    public static void main(String[] args) {
+        SpringApplication.run(TicketnestApplication.class, args);
+    }
 
-			Instant end = LocalDate
-					.of(2026, 8, 17)
-					.atStartOfDay(zone)
-					.toInstant();
+    @Bean
+    CommandLineRunner testShowQuery(ShowRepository showRepository) {
+        return args -> {
+            var shows = showRepository.findShowsByCityAndDate(
+                    "Bangalore",
+                    java.time.Instant.now(),
+                    java.time.Instant.now().plusSeconds(86400)
+            );
 
-			var shows = showRepository.findShowsByCityAndDate(
-					"Bangalore",
-					start,
-					end
-			);
-
-			shows.forEach(show ->
-					System.out.println(
-							"Found show: " + show.getTitle()
-					)
-			);
-		};
-	}
+            shows.forEach(show ->
+                    System.out.println(
+                            "Found show: " + show.getTitle()
+                    )
+            );
+        };
+    }
 }
