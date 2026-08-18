@@ -14,6 +14,11 @@ spring:
         jdbc:
           time_zone: UTC
 
-spring doc:
+springdoc:
   swagger-ui:
     path: /swagger
+
+app:
+  jwt:
+    secret: "your-256-bit-secret-key-here-make-it-long-and-random-for-production"
+    expiration-ms: 900000  # 15 minutes (access token)

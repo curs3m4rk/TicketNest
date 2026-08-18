@@ -43,6 +43,9 @@ public class User {
     @OneToMany(mappedBy = "user")
     private List<Notification> notifications = new ArrayList<>();
 
+    @OneToMany(mappedBy = "user")
+    private List<RefreshToken> refreshTokens = new ArrayList<>();
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
