@@ -66,7 +66,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/logout").authenticated()              // logout requires valid token
                 .requestMatchers("/auth/**").permitAll()                      // other auth endpoints public
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // Swagger/OpenAPI
+                .requestMatchers("/swagger", "/swagger/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll() // Swagger/OpenAPI
                 .anyRequest().authenticated()                                 // everything else requires auth
             )
             .csrf(csrf -> csrf.disable())                                   // disable CSRF for stateless API
