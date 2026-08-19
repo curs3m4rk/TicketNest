@@ -1,6 +1,7 @@
 package com.ticketnest.auth;
 
 import com.ticketnest.entity.RefreshToken;
+import com.ticketnest.entity.Role;
 import com.ticketnest.entity.User;
 import com.ticketnest.repository.RefreshTokenRepository;
 import com.ticketnest.repository.UserRepository;
@@ -50,7 +51,7 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
-        user.setRole("USER");
+        user.setRole(Role.USER);
         user.setActive(true);
         user.setCreatedAt(Instant.now());
 
@@ -131,7 +132,7 @@ public class AuthService {
     }
 
     private LoginResponse issueLoginTokens(User user) {
-        String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole());
+        String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
         String refreshToken = generateOpaqueToken();
         saveRefreshToken(user, refreshToken);
 
@@ -147,7 +148,7 @@ public class AuthService {
     }
 
     private TokenResponse issueRefreshTokens(User user) {
-        String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole());
+        String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
         String refreshToken = generateOpaqueToken();
         saveRefreshToken(user, refreshToken);
 

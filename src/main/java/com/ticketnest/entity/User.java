@@ -32,7 +32,8 @@ public class User {
     private String lastName;
 
     @Column(nullable = false)
-    private String role;
+    @Enumerated(EnumType.STRING)
+    private Role role = Role.USER;
 
     @Column(nullable = false)
     private boolean active = true;

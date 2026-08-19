@@ -1,5 +1,6 @@
 package com.ticketnest.auth.dto;
 
+import com.ticketnest.entity.Role;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,5 +17,5 @@ public class RegisterResponse {
     private String email;
     private String firstName;
     private String lastName;
-    private String role;
+    private Role role;
 }

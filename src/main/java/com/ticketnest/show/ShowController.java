@@ -4,6 +4,7 @@ import com.ticketnest.show.dto.ShowRequest;
 import com.ticketnest.show.dto.ShowResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,6 +39,7 @@ public class ShowController {
 
     /** Creates a new show. Returns 201 with created show. */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ShowResponse> createShow(@Valid @RequestBody ShowRequest request) {
         ShowResponse response = showService.createShow(request);
         return ResponseEntity.status(201).body(response);
@@ -45,12 +47,14 @@ public class ShowController {
 
     /** Updates an existing show (including venue reassignment). */
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ShowResponse updateShow(@PathVariable UUID id, @Valid @RequestBody ShowRequest request) {
         return showService.updateShow(id, request);
     }
 
     /** Deletes a show. Returns 204 no content. */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteShow(@PathVariable UUID id) {
         showService.deleteShow(id);
         return ResponseEntity.noContent().build();

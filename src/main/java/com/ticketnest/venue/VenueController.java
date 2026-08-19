@@ -4,6 +4,7 @@ import com.ticketnest.venue.dto.VenueRequest;
 import com.ticketnest.venue.dto.VenueResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,6 +39,7 @@ public class VenueController {
 
     /** Creates a new venue. Returns 201 with created venue. */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<VenueResponse> createVenue(@Valid @RequestBody VenueRequest request) {
         VenueResponse response = venueService.createVenue(request);
         return ResponseEntity.status(201).body(response);
@@ -45,12 +47,14 @@ public class VenueController {
 
     /** Updates an existing venue. */
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public VenueResponse updateVenue(@PathVariable UUID id, @Valid @RequestBody VenueRequest request) {
         return venueService.updateVenue(id, request);
     }
 
     /** Deletes a venue. Returns 204 no content. */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteVenue(@PathVariable UUID id) {
         venueService.deleteVenue(id);
         return ResponseEntity.noContent().build();
