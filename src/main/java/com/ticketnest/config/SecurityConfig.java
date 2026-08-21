@@ -45,14 +45,6 @@ public class SecurityConfig {
     }
 
     /**
-     * Exposes custom UserDetailsService for @AuthenticationPrincipal and authentication manager.
-     */
-    @Bean
-    public UserDetailsService userDetailsService(UserDetailsServiceImpl impl) {
-        return impl;
-    }
-
-    /**
      * Configures the filter chain for JWT-based stateless authentication:
      * - Permits unauthenticated access to /auth/**, Swagger, OpenAPI docs
      * - Requires authentication for all other endpoints
