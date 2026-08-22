@@ -10,9 +10,11 @@ import com.ticketnest.auth.dto.TokenResponse;
 import com.ticketnest.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.UUID;
 
@@ -29,25 +31,37 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
-        RegisterResponse response = authService.register(request);
-        return ResponseEntity.status(201).body(response);
+        try {
+            RegisterResponse response = authService.register(request);
+            return ResponseEntity.status(201).body(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
     }
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        LoginResponse response = authService.login(request);
-        return ResponseEntity.ok(response);
+        try {
+            LoginResponse response = authService.login(request);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        }
     }
 
     @PostMapping("/refresh")
     public ResponseEntity<TokenResponse> refresh(@Valid @RequestBody RefreshRequest request) {
-        TokenResponse response = authService.refresh(request.getRefreshToken());
-        return ResponseEntity.ok(response);
+        try {
+            TokenResponse response = authService.refresh(request.getRefreshToken());
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        }
     }
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@Valid @RequestBody(required = false) LogoutRequest request,
-                                        @AuthenticationPrincipal String email) {
+                                       @AuthenticationPrincipal String email) {
         UUID userId = userRepository.findByEmail(email)
                 .map(u -> u.getId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
