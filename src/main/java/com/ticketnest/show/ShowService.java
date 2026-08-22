@@ -1,5 +1,6 @@
 package com.ticketnest.show;
 
+import com.ticketnest.common.dto.PageResponse;
 import com.ticketnest.entity.Show;
 import com.ticketnest.entity.Venue;
 import com.ticketnest.repository.ShowRepository;
@@ -7,6 +8,8 @@ import com.ticketnest.repository.VenueRepository;
 import com.ticketnest.show.dto.ShowRequest;
 import com.ticketnest.show.dto.ShowResponse;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -34,6 +37,27 @@ public class ShowService {
                 .stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    /**
+     * Returns a paginated list of all shows with venue and seat tiers.
+     * Maps Page<Show> to PageResponse<ShowResponse> for API layer.
+     */
+    public PageResponse<ShowResponse> getAllShows(Pageable pageable) {
+        Page<Show> page = showRepository.findAllWithVenue(pageable);
+        List<ShowResponse> content = page.getContent().stream()
+                .map(this::toResponse)
+                .toList();
+        return new PageResponse<>(
+                content,
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages(),
+                page.isFirst(),
+                page.isLast(),
+                page.isEmpty()
+        );
     }
 
     /** Returns a single show by ID with venue and seat tiers. Throws if not found. */

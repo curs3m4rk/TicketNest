@@ -1,13 +1,15 @@
 package com.ticketnest.show;
 
+import com.ticketnest.common.dto.PageResponse;
 import com.ticketnest.show.dto.ShowRequest;
 import com.ticketnest.show.dto.ShowResponse;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -25,10 +27,17 @@ public class ShowController {
         this.showService = showService;
     }
 
-    /** Lists all shows with venue and seat tiers. */
+    /**
+     * Lists shows with pagination and sorting.
+     * Default: page 0, size 20, sorted by startTime ASC (upcoming first).
+     * Query params: page, size, sort (e.g., ?page=1&size=10&sort=startTime,desc&sort=venue.city,asc)
+     * Returns PageResponse with pagination metadata.
+     */
     @GetMapping
-    public List<ShowResponse> getShows() {
-        return showService.getAllShows();
+    public PageResponse<ShowResponse> getShows(
+            @PageableDefault(size = 20, sort = "startTime", direction = org.springframework.data.domain.Sort.Direction.ASC)
+            Pageable pageable) {
+        return showService.getAllShows(pageable);
     }
 
     /** Gets a single show by ID with venue and seat tiers. */
