@@ -1,4 +1,7 @@
 spring:
+  application:
+    name: ticketnest
+
   datasource:
     url: jdbc:postgresql://127.0.0.1:5432/ticketnest?currentSchema=public&timezone=UTC
     username: ticketnest
@@ -27,6 +30,11 @@ server:
 springdoc:
   swagger-ui:
     path: /swagger
+
+logging:
+  structured:
+    format:
+      console: logstash
 
 app:
   jwt:

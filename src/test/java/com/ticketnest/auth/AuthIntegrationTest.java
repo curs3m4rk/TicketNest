@@ -160,7 +160,8 @@ class AuthIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(
                         get("/api/shows")
                                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().exists("X-Request-ID"));
     }
 
     @Test
