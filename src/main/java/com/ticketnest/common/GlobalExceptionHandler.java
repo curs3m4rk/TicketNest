@@ -26,6 +26,20 @@ public class GlobalExceptionHandler {
     /** Handles @Valid validation failures on @RequestBody DTOs. */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex, jakarta.servlet.http.HttpServletRequest request) {
+        var bindingFailure = ex.getBindingResult().getFieldErrors()
+                .stream()
+                .filter(fe -> fe.isBindingFailure())
+                .findFirst();
+        if (bindingFailure.isPresent()) {
+            ErrorResponse body = ErrorResponse.of(
+                    HttpStatus.BAD_REQUEST.value(),
+                    "Invalid Parameter",
+                    "Parameter '" + bindingFailure.get().getField() + "' has an invalid value",
+                    request.getRequestURI()
+            );
+            return ResponseEntity.badRequest().body(body);
+        }
+
         Map<String, List<String>> errors = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()

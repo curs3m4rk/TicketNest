@@ -5,14 +5,12 @@ import com.ticketnest.show.dto.ShowRequest;
 import com.ticketnest.show.dto.ShowResponse;
 import com.ticketnest.show.dto.ShowFilter;
 import jakarta.validation.Valid;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -38,13 +36,10 @@ public class ShowController {
      */
     @GetMapping
     public PageResponse<ShowResponse> getShows(
-            @RequestParam(required = false) String city,
-            @RequestParam(required = false) String genre,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+            @Valid @ModelAttribute ShowFilter filter,
             @PageableDefault(size = 20, sort = "startTime", direction = org.springframework.data.domain.Sort.Direction.ASC)
             Pageable pageable) {
-        return showService.getAllShows(new ShowFilter(city, genre, from, to), pageable);
+        return showService.getAllShows(filter, pageable);
     }
 
     /** Gets a single show by ID with venue and seat tiers. */
