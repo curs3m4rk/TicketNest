@@ -1,7 +1,10 @@
 package com.ticketnest.venue;
 
+import com.ticketnest.entity.Seat;
 import com.ticketnest.entity.Venue;
+import com.ticketnest.repository.SeatRepository;
 import com.ticketnest.repository.VenueRepository;
+import com.ticketnest.venue.dto.SeatResponse;
 import com.ticketnest.venue.dto.VenueRequest;
 import com.ticketnest.venue.dto.VenueResponse;
 import jakarta.persistence.EntityNotFoundException;
@@ -19,9 +22,11 @@ import java.util.UUID;
 public class VenueService {
 
     private final VenueRepository venueRepository;
+    private final SeatRepository seatRepository;
 
-    public VenueService(VenueRepository venueRepository) {
+    public VenueService(VenueRepository venueRepository, SeatRepository seatRepository) {
         this.venueRepository = venueRepository;
+        this.seatRepository = seatRepository;
     }
 
     /** Returns all venues with their seat tiers. */
@@ -37,6 +42,16 @@ public class VenueService {
         return venueRepository.findById(id)
                 .map(this::toResponse)
                 .orElseThrow(() -> new EntityNotFoundException("Venue with id " + id + " not found"));
+    }
+
+    public List<SeatResponse> getSeats(UUID venueId) {
+        if (!venueRepository.existsById(venueId)) {
+            throw new EntityNotFoundException("Venue with id " + venueId + " not found");
+        }
+        return seatRepository.findByVenueIdOrderByRowAscNumberAsc(venueId)
+                .stream()
+                .map(this::toSeatResponse)
+                .toList();
     }
 
     /** Creates a new venue (active by default) and returns it with seat tiers. */
@@ -82,5 +97,9 @@ public class VenueService {
                 venue.isActive(),
                 seatTiers
         );
+    }
+
+    private SeatResponse toSeatResponse(Seat seat) {
+        return new SeatResponse(seat.getId(), seat.getRow(), seat.getNumber(), seat.getTier());
     }
 }

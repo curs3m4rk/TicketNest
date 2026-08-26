@@ -1,5 +1,6 @@
 package com.ticketnest.venue;
 
+import com.ticketnest.venue.dto.SeatResponse;
 import com.ticketnest.venue.dto.VenueRequest;
 import com.ticketnest.venue.dto.VenueResponse;
 import jakarta.validation.Valid;
@@ -35,6 +36,11 @@ public class VenueController {
     @GetMapping("/{id}")
     public VenueResponse getVenue(@PathVariable UUID id) {
         return venueService.getVenue(id);
+    }
+
+    @GetMapping("/{id}/seats")
+    public List<SeatResponse> getSeats(@PathVariable UUID id) {
+        return venueService.getSeats(id);
     }
 
     /** Creates a new venue. Returns 201 with created venue. */
