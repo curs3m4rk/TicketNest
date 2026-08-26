@@ -76,14 +76,25 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(body);
     }
 
-    /** Handles UUID type mismatch in path variables. */
+    /** Handles malformed path variables and request parameters. */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex, jakarta.servlet.http.HttpServletRequest request) {
         String param = ex.getName();
         ErrorResponse body = ErrorResponse.of(
                 HttpStatus.BAD_REQUEST.value(),
                 "Invalid Parameter",
-                "Parameter '" + param + "' must be a valid UUID",
+                "Parameter '" + param + "' has an invalid value",
+                request.getRequestURI()
+        );
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex, jakarta.servlet.http.HttpServletRequest request) {
+        ErrorResponse body = ErrorResponse.of(
+                HttpStatus.BAD_REQUEST.value(),
+                "Invalid Parameter",
+                ex.getMessage(),
                 request.getRequestURI()
         );
         return ResponseEntity.badRequest().body(body);

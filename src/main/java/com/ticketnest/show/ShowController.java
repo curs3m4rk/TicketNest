@@ -3,13 +3,16 @@ package com.ticketnest.show;
 import com.ticketnest.common.dto.PageResponse;
 import com.ticketnest.show.dto.ShowRequest;
 import com.ticketnest.show.dto.ShowResponse;
+import com.ticketnest.show.dto.ShowFilter;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -28,16 +31,20 @@ public class ShowController {
     }
 
     /**
-     * Lists shows with pagination and sorting.
+     * Lists shows with optional city, genre, and start-time filters.
      * Default: page 0, size 20, sorted by startTime ASC (upcoming first).
-     * Query params: page, size, sort (e.g., ?page=1&size=10&sort=startTime,desc&sort=venue.city,asc)
+     * Query params: city, genre, from, to, page, size, sort.
      * Returns PageResponse with pagination metadata.
      */
     @GetMapping
     public PageResponse<ShowResponse> getShows(
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String genre,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
             @PageableDefault(size = 20, sort = "startTime", direction = org.springframework.data.domain.Sort.Direction.ASC)
             Pageable pageable) {
-        return showService.getAllShows(pageable);
+        return showService.getAllShows(new ShowFilter(city, genre, from, to), pageable);
     }
 
     /** Gets a single show by ID with venue and seat tiers. */

@@ -7,9 +7,11 @@ import com.ticketnest.repository.ShowRepository;
 import com.ticketnest.repository.VenueRepository;
 import com.ticketnest.show.dto.ShowRequest;
 import com.ticketnest.show.dto.ShowResponse;
+import com.ticketnest.show.dto.ShowFilter;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -43,8 +45,16 @@ public class ShowService {
      * Returns a paginated list of all shows with venue and seat tiers.
      * Maps Page<Show> to PageResponse<ShowResponse> for API layer.
      */
-    public PageResponse<ShowResponse> getAllShows(Pageable pageable) {
-        Page<Show> page = showRepository.findAllWithVenue(pageable);
+    public PageResponse<ShowResponse> getAllShows(ShowFilter filter, Pageable pageable) {
+        validateFilter(filter);
+
+        Specification<Show> specification = Specification
+                .where(ShowSpecifications.cityEquals(filter.city()))
+                .and(ShowSpecifications.genreEquals(filter.genre()))
+                .and(ShowSpecifications.startsAtOrAfter(filter.from()))
+                .and(ShowSpecifications.startsBefore(filter.to()));
+
+        Page<Show> page = showRepository.findAll(specification, pageable);
         List<ShowResponse> content = page.getContent().stream()
                 .map(this::toResponse)
                 .toList();
@@ -58,6 +68,12 @@ public class ShowService {
                 page.isLast(),
                 page.isEmpty()
         );
+    }
+
+    private void validateFilter(ShowFilter filter) {
+        if (filter.from() != null && filter.to() != null && !filter.from().isBefore(filter.to())) {
+            throw new IllegalArgumentException("'from' must be earlier than 'to'");
+        }
     }
 
     /** Returns a single show by ID with venue and seat tiers. Throws if not found. */

@@ -4,8 +4,11 @@ import com.ticketnest.entity.Show;
 import com.ticketnest.entity.Venue;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
@@ -17,7 +20,12 @@ import java.util.UUID;
  * Repository for Show entity.
  * Provides custom queries for catalog: find by city+date, fetch with venue, and seat tiers.
  */
-public interface ShowRepository extends JpaRepository<Show, UUID> {
+public interface ShowRepository extends JpaRepository<Show, UUID>, JpaSpecificationExecutor<Show> {
+
+    @Override
+    @EntityGraph(attributePaths = "venue")
+    Page<Show> findAll(Specification<Show> specification, Pageable pageable);
+
     /**
      * Finds shows in a city within a date range (inclusive start, exclusive end).
      * Used for city-based event discovery.
