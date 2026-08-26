@@ -1,15 +1,46 @@
 services:
   postgres:
     image: postgres:17
-    container_name: ticketnest-postgres
     environment:
-      POSTGRES_DB: ticketnest
-      POSTGRES_USER: ticketnest
-      POSTGRES_PASSWORD: ticketnest_Admin
+      POSTGRES_DB: ${POSTGRES_DB:-ticketnest}
+      POSTGRES_USER: ${POSTGRES_USER:-ticketnest}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ticketnest_Admin}
     ports:
-      - "5432:5432"
+      - "${TICKETNEST_POSTGRES_PORT:-5432}:5432"
     volumes:
       - ticketnest-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ticketnest-app:local
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-ticketnest}?currentSchema=public&timezone=UTC
+      DB_USERNAME: ${POSTGRES_USER:-ticketnest}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ticketnest_Admin}
+      JWT_SECRET: ${JWT_SECRET:-ticketnest-local-development-jwt-secret-change-before-production}
+      SERVER_PORT: 8080
+      SERVER_SSL_ENABLED: "false"
+    ports:
+      - "${TICKETNEST_APP_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
 
 volumes:
   ticketnest-postgres-data:
