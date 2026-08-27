@@ -14,6 +14,7 @@ public class LoginResponse {
     private String refreshToken;
     private UUID id;
     private String email;
+    private String phoneNumber;
     private String firstName;
     private String lastName;
     private Role role;

@@ -47,13 +47,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = authHeader.substring(7);
         try {
-            String email = jwtUtil.getEmail(token);
+            String userId = jwtUtil.getSubject(token);
             String role = jwtUtil.getRole(token);
-            log.debug("Token parsed - email: {}, role: {}", email, role);
+            log.debug("Token parsed - userId: {}, role: {}", userId, role);
 
-            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
-                var authToken = new UsernamePasswordAuthenticationToken(email, null, authorities);
+                var authToken = new UsernamePasswordAuthenticationToken(userId, null, authorities);
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
                 log.debug("Authentication set in SecurityContext");

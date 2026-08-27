@@ -19,16 +19,20 @@ public class User {
     @GeneratedValue
     private UUID id;
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @Column(unique = true, length = 16)
+    private String phoneNumber;
+
+    private Instant emailVerifiedAt;
+
+    private Instant phoneVerifiedAt;
+
     private String passwordHash;
 
-    @Column(nullable = false)
     private String firstName;
 
-    @Column(nullable = false)
     private String lastName;
 
     @Column(nullable = false)

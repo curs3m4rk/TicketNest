@@ -21,6 +21,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.UUID;
+import java.util.Locale;
 
 /**
  * Authentication business logic: registration, login, token refresh, logout.
@@ -42,12 +43,13 @@ public class AuthService {
 
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
+        if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("Email already registered");
         }
 
         User user = new User();
-        user.setEmail(request.getEmail());
+        user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
@@ -61,14 +63,16 @@ public class AuthService {
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
+        User user = userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
 
         if (!user.isActive()) {
             throw new IllegalArgumentException("Account deactivated");
         }
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+        if (user.getPasswordHash() == null
+                || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Invalid credentials");
         }
 
@@ -131,8 +135,8 @@ public class AuthService {
         refreshTokenRepository.deleteExpired(Instant.now());
     }
 
-    private LoginResponse issueLoginTokens(User user) {
-        String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
+    public LoginResponse issueLoginTokens(User user) {
+        String accessToken = jwtUtil.generateToken(user.getId().toString(), user.getRole().name());
         String refreshToken = generateOpaqueToken();
         saveRefreshToken(user, refreshToken);
 
@@ -141,6 +145,7 @@ public class AuthService {
         response.setRefreshToken(refreshToken);
         response.setId(user.getId());
         response.setEmail(user.getEmail());
+        response.setPhoneNumber(user.getPhoneNumber());
         response.setFirstName(user.getFirstName());
         response.setLastName(user.getLastName());
         response.setRole(user.getRole());
@@ -148,7 +153,7 @@ public class AuthService {
     }
 
     private TokenResponse issueRefreshTokens(User user) {
-        String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
+        String accessToken = jwtUtil.generateToken(user.getId().toString(), user.getRole().name());
         String refreshToken = generateOpaqueToken();
         saveRefreshToken(user, refreshToken);
 

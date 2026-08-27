@@ -17,6 +17,15 @@ spring:
         jdbc:
           time_zone: UTC
 
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${MAIL_SMTP_AUTH:false}
+      mail.smtp.starttls.enable: ${MAIL_SMTP_STARTTLS:false}
+
 # SSL/HTTPS Configuration (development)
 server:
   port: ${SERVER_PORT:8443}
@@ -49,3 +58,18 @@ app:
   jwt:
     secret: ${JWT_SECRET:your-256-bit-secret-key-here-make-it-long-and-random-for-production}
     expiration-ms: 900000  # 15 minutes (access token)
+  otp:
+    secret: ${OTP_SECRET:development-only-change-this-otp-secret}
+    ttl-seconds: ${OTP_TTL_SECONDS:300}
+    resend-cooldown-seconds: ${OTP_RESEND_COOLDOWN_SECONDS:60}
+    max-requests-per-window: ${OTP_MAX_REQUESTS_PER_WINDOW:5}
+    request-window-seconds: ${OTP_REQUEST_WINDOW_SECONDS:900}
+    max-verification-attempts: ${OTP_MAX_VERIFICATION_ATTEMPTS:5}
+    email:
+      enabled: ${OTP_EMAIL_ENABLED:false}
+      from: ${OTP_EMAIL_FROM:no-reply@ticketnest.local}
+    sms:
+      enabled: ${OTP_SMS_ENABLED:false}
+      account-sid: ${TWILIO_ACCOUNT_SID:}
+      auth-token: ${TWILIO_AUTH_TOKEN:}
+      from-number: ${TWILIO_FROM_NUMBER:}

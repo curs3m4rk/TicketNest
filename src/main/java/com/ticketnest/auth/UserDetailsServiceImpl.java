@@ -8,10 +8,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
-
 /**
- * Loads UserDetails by email (used by @AuthenticationPrincipal and authentication manager).
+ * Loads password-based users by email for Spring Security integrations.
  */
 @Service
 @RequiredArgsConstructor
@@ -26,7 +24,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getId().toString()) // use UUID as principal name
-                .password(user.getPasswordHash())
+                .password(user.getPasswordHash() != null ? user.getPasswordHash() : "{noop}otp-only-account")
                 .authorities("ROLE_" + user.getRole().name())
                 .accountExpired(false)
                 .accountLocked(!user.isActive())

@@ -1,6 +1,9 @@
 package com.ticketnest.common;
 
 import com.ticketnest.common.dto.ErrorResponse;
+import com.ticketnest.auth.otp.InvalidOtpException;
+import com.ticketnest.auth.otp.OtpDeliveryException;
+import com.ticketnest.auth.otp.OtpRateLimitException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -22,6 +25,39 @@ import java.util.stream.Collectors;
  */
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(InvalidOtpException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidOtp(InvalidOtpException ex, jakarta.servlet.http.HttpServletRequest request) {
+        ErrorResponse body = ErrorResponse.of(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Unauthorized",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+    }
+
+    @ExceptionHandler(OtpRateLimitException.class)
+    public ResponseEntity<ErrorResponse> handleOtpRateLimit(OtpRateLimitException ex, jakarta.servlet.http.HttpServletRequest request) {
+        ErrorResponse body = ErrorResponse.of(
+                HttpStatus.TOO_MANY_REQUESTS.value(),
+                "Too Many Requests",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(body);
+    }
+
+    @ExceptionHandler(OtpDeliveryException.class)
+    public ResponseEntity<ErrorResponse> handleOtpDelivery(OtpDeliveryException ex, jakarta.servlet.http.HttpServletRequest request) {
+        ErrorResponse body = ErrorResponse.of(
+                HttpStatus.SERVICE_UNAVAILABLE.value(),
+                "Service Unavailable",
+                "Verification delivery is temporarily unavailable",
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(body);
+    }
 
     /** Handles @Valid validation failures on @RequestBody DTOs. */
     @ExceptionHandler(MethodArgumentNotValidException.class)

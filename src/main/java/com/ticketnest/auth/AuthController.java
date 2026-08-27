@@ -7,7 +7,10 @@ import com.ticketnest.auth.dto.RefreshRequest;
 import com.ticketnest.auth.dto.RegisterRequest;
 import com.ticketnest.auth.dto.RegisterResponse;
 import com.ticketnest.auth.dto.TokenResponse;
-import com.ticketnest.repository.UserRepository;
+import com.ticketnest.auth.dto.OtpRequest;
+import com.ticketnest.auth.dto.OtpRequestResponse;
+import com.ticketnest.auth.dto.OtpVerifyRequest;
+import com.ticketnest.auth.otp.OtpService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,7 +30,7 @@ import java.util.UUID;
 public class AuthController {
 
     private final AuthService authService;
-    private final UserRepository userRepository;
+    private final OtpService otpService;
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -49,6 +52,16 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/otp/request")
+    public ResponseEntity<OtpRequestResponse> requestOtp(@Valid @RequestBody OtpRequest request) {
+        return ResponseEntity.accepted().body(otpService.request(request));
+    }
+
+    @PostMapping("/otp/verify")
+    public ResponseEntity<LoginResponse> verifyOtp(@Valid @RequestBody OtpVerifyRequest request) {
+        return ResponseEntity.ok(otpService.verify(request));
+    }
+
     @PostMapping("/refresh")
     public ResponseEntity<TokenResponse> refresh(@Valid @RequestBody RefreshRequest request) {
         try {
@@ -61,10 +74,8 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@Valid @RequestBody(required = false) LogoutRequest request,
-                                       @AuthenticationPrincipal String email) {
-        UUID userId = userRepository.findByEmail(email)
-                .map(u -> u.getId())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                                       @AuthenticationPrincipal String principal) {
+        UUID userId = UUID.fromString(principal);
         String refreshToken = (request != null) ? request.getRefreshToken() : null;
         authService.logout(userId, refreshToken);
         return ResponseEntity.noContent().build();

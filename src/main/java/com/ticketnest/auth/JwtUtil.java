@@ -27,14 +27,14 @@ public class JwtUtil {
     }
 
     /**
-     * Generates a JWT for the given user email and role.
-     * Includes: subject=email, role claim, issuedAt, expiration.
+     * Generates a JWT for the given immutable user ID and role.
+     * Includes: subject=user ID, role claim, issuedAt, expiration.
      */
-    public String generateToken(String email, String role) {
+    public String generateToken(String userId, String role) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expirationMs);
         return Jwts.builder()
-                .subject(email)
+                .subject(userId)
                 .claim("role", role)
                 .issuedAt(now)
                 .expiration(expiry)
@@ -55,9 +55,9 @@ public class JwtUtil {
     }
 
     /**
-     * Extracts email (subject) from token.
+     * Extracts the user ID (subject) from the token.
      */
-    public String getEmail(String token) {
+    public String getSubject(String token) {
         return parseToken(token).getSubject();
     }
 
