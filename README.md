@@ -2,6 +2,18 @@
 
 Ticket booking backend built with Java and Spring Boot.
 
+## Engineering Documentation
+
+The repository is the source of truth for implementation and engineering context:
+
+* [Current project status](docs/PROJECT_STATUS.md)
+* [Current architecture](docs/ARCHITECTURE.md)
+* [Architecture decisions](docs/adr/README.md)
+* [Engineering changelog](docs/CHANGELOG.md)
+* [Cross-agent contribution rules](AGENTS.md)
+
+Booking, payment, and notification currently have persistence entities only; see the project status before treating a domain as implemented.
+
 ## Tech Stack
 
 * Java 21

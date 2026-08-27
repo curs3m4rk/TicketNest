@@ -1,0 +1,121 @@
+erDiagram
+    USERS {
+        uuid id PK
+        varchar email UK "nullable"
+        varchar phone_number UK "nullable, max 16"
+        timestamp email_verified_at "nullable"
+        timestamp phone_verified_at "nullable"
+        varchar password_hash "nullable"
+        varchar first_name "nullable"
+        varchar last_name "nullable"
+        varchar role "USER or ADMIN"
+        boolean active
+        timestamp created_at
+        timestamp updated_at "nullable"
+    }
+
+    REFRESH_TOKENS {
+        uuid id PK
+        varchar token_hash UK
+        uuid user_id FK
+        timestamp expires_at
+        boolean revoked
+        timestamp created_at
+    }
+
+    OTP_CHALLENGES {
+        uuid id PK
+        varchar destination "max 254"
+        varchar channel "EMAIL or SMS"
+        varchar code_hash "max 44"
+        timestamp expires_at
+        int attempt_count
+        int max_attempts
+        timestamp consumed_at "nullable"
+        timestamp created_at
+    }
+
+    VENUES {
+        uuid id PK
+        varchar name
+        varchar city
+        varchar address
+        boolean active
+        timestamp created_at
+        timestamp updated_at "nullable"
+    }
+
+    SEATS {
+        uuid id PK
+        uuid venue_id FK
+        varchar seat_row
+        varchar seat_number
+        varchar tier
+        bigint version "optimistic lock"
+        timestamp created_at
+        timestamp updated_at "nullable"
+    }
+
+    SHOWS {
+        uuid id PK
+        uuid venue_id FK
+        varchar title
+        timestamp start_time
+        varchar genre
+        varchar status
+        timestamp created_at
+        timestamp updated_at "nullable"
+    }
+
+    BOOKINGS {
+        uuid id PK
+        uuid user_id FK
+        uuid show_id FK
+        varchar status "HELD CONFIRMED RELEASED FAILED"
+        varchar idempotency_key UK
+        timestamp created_at
+        timestamp updated_at "nullable"
+    }
+
+    BOOKING_SEATS {
+        uuid id PK
+        uuid booking_id FK
+        uuid seat_id FK
+        timestamp created_at
+    }
+
+    PAYMENTS {
+        uuid id PK
+        uuid booking_id FK,UK
+        varchar status "PENDING SUCCESS FAILED REFUNDED"
+        varchar provider_ref "nullable"
+        timestamp created_at
+        timestamp updated_at "nullable"
+    }
+
+    NOTIFICATIONS {
+        uuid id PK
+        uuid user_id FK
+        varchar type "BOOKING_CONFIRMED BOOKING_FAILED PAYMENT_SUCCESS PAYMENT_FAILED"
+        text payload
+        timestamp sent_at "nullable"
+        timestamp created_at
+    }
+
+    USERS ||--o{ REFRESH_TOKENS : owns
+    USERS ||--o{ BOOKINGS : creates
+    USERS ||--o{ NOTIFICATIONS : receives
+    VENUES ||--o{ SEATS : contains
+    VENUES ||--o{ SHOWS : hosts
+    SHOWS ||--o{ BOOKINGS : booked_for
+    BOOKINGS ||--o{ BOOKING_SEATS : includes
+    SEATS ||--o{ BOOKING_SEATS : selected_as
+    BOOKINGS ||--o| PAYMENTS : has
+
+%% Additional constraints and indexes:
+%% - SEATS unique (venue_id, seat_row, seat_number)
+%% - BOOKING_SEATS unique (booking_id, seat_id)
+%% - BOOKINGS indexes user_id and show_id; idempotency_key is unique
+%% - PAYMENTS index booking_id and unique booking_id
+%% - NOTIFICATIONS index user_id
+%% - OTP_CHALLENGES index (destination, created_at)
