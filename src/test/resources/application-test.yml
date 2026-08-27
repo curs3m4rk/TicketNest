@@ -1,0 +1,15 @@
+server:
+  ssl:
+    enabled: false
+
+spring:
+  jpa:
+    show-sql: false
+
+app:
+  jwt:
+    secret: ticketnest-integration-test-jwt-secret-at-least-32-bytes-long
+
+logging:
+  level:
+    root: WARN

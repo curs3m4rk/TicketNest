@@ -23,6 +23,7 @@ services:
       dockerfile: Dockerfile
     image: ticketnest-app:local
     environment:
+      SPRING_PROFILES_ACTIVE: local
       DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-ticketnest}?currentSchema=public&timezone=UTC
       DB_USERNAME: ${POSTGRES_USER:-ticketnest}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-ticketnest_Admin}

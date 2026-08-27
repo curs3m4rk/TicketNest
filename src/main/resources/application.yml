@@ -3,29 +3,32 @@ spring:
     name: ticketnest
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://127.0.0.1:5432/ticketnest?currentSchema=public&timezone=UTC}
-    username: ${DB_USERNAME:ticketnest}
-    password: ${DB_PASSWORD:ticketnest_Admin}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    clean-disabled: true
+    out-of-order: false
 
   jpa:
+    generate-ddl: false
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: validate
+    show-sql: false
     open-in-view: false
     properties:
       hibernate:
         jdbc:
           time_zone: UTC
 
-# SSL/HTTPS Configuration (development)
 server:
-  port: ${SERVER_PORT:8443}
+  port: ${SERVER_PORT:8080}
   ssl:
-    enabled: ${SERVER_SSL_ENABLED:true}
-    key-store: classpath:keystore.p12
-    key-store-password: changeit
-    key-store-type: PKCS12
-    key-alias: ticketnest
+    enabled: ${SERVER_SSL_ENABLED:false}
 
 springdoc:
   swagger-ui:
@@ -47,5 +50,5 @@ logging:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:your-256-bit-secret-key-here-make-it-long-and-random-for-production}
+    secret: ${JWT_SECRET}
     expiration-ms: 900000  # 15 minutes (access token)

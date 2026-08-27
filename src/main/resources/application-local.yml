@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://127.0.0.1:5432/ticketnest?currentSchema=public&timezone=UTC}
+    username: ${DB_USERNAME:ticketnest}
+    password: ${DB_PASSWORD:ticketnest_Admin}
+  jpa:
+    show-sql: true
+
+server:
+  port: ${SERVER_PORT:8443}
+  ssl:
+    enabled: ${SERVER_SSL_ENABLED:true}
+    key-store: classpath:keystore.p12
+    key-store-password: changeit
+    key-store-type: PKCS12
+    key-alias: ticketnest
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:ticketnest-local-development-jwt-secret-change-before-production}

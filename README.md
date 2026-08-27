@@ -19,6 +19,10 @@ TicketNest is a production-oriented ticket booking backend built as a hands-on p
 
 ## Development
 
+TicketNest uses Flyway for all database schema changes. Hibernate validates the
+schema and never creates or updates it. See the [manual Azure setup](docs/azure-manual-setup.md)
+for the production-like Dev/Test environment and GitHub CI/CD configuration.
+
 ### Run the complete stack with Docker
 
 From a clean clone, build and start TicketNest with PostgreSQL:
@@ -59,7 +63,12 @@ docker compose down -v
 ### Run the application directly
 
 Start PostgreSQL with `docker compose up postgres`, then run TicketNest from
-IntelliJ IDEA or Maven. Direct local runs retain the HTTPS development default:
+IntelliJ IDEA or Maven with the `local` profile. Direct local runs retain the
+HTTPS development default:
+
+```shell
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+```
 
 ```text
 https://localhost:8443

@@ -1,0 +1,15 @@
+spring:
+  jpa:
+    show-sql: false
+
+server:
+  port: 8080
+  ssl:
+    enabled: false
+  forward-headers-strategy: framework
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
