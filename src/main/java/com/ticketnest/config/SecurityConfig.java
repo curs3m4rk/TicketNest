@@ -46,7 +46,7 @@ public class SecurityConfig {
 
     /**
      * Configures the filter chain for JWT-based stateless authentication:
-     * - Permits unauthenticated access to /auth/**, Swagger, OpenAPI docs
+     * - Permits unauthenticated access to /auth/**, health, Swagger, OpenAPI docs
      * - Requires authentication for all other endpoints
      * - Disables CSRF (stateless REST API)
      * - Stateless session management (no HttpSession)
@@ -60,6 +60,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/logout").authenticated()              // logout requires valid token
                 .requestMatchers("/auth/**").permitAll()                      // other auth endpoints public
+                .requestMatchers("/actuator/health", "/actuator/health/**").permitAll() // container health checks
                 .requestMatchers("/swagger", "/swagger/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll() // Swagger/OpenAPI
                 .anyRequest().authenticated()                                 // everything else requires auth
             )
