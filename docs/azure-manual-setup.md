@@ -283,9 +283,8 @@ Key Vault > `postgres-admin-password` > **Access control (IAM)** > **Add role as
    - Registry server: `docker.io`
    - Image/tag: `library/postgres:17`
    - CPU `0.25`, memory `0.5 GiB`
-   - Command override `/bin/sh`
-   - Argument item 1: `-c`
-   - Argument item 2: `echo configuration-pending`
+   - Command override: `/bin/true`
+   - Leave Arguments override empty; Cloud Shell will set the final command later
 4. Create it, but do not start it.
 
 ### Assign identity and secret references
@@ -311,24 +310,119 @@ Open Job > **Containers** > **Edit** (sometimes **Edit and deploy**) and edit `p
 | `PG_ADMIN_PASSWORD` | Secret reference | `pg-admin-password` |
 | `APP_DB_PASSWORD` | Secret reference | `app-db-password` |
 
-Set command `/bin/sh`. Argument item 1 is `-c`; paste this entire block as argument item 2:
+Do not use the portal's **Arguments override** box for this script. Portal
+versions have handled that comma-separated field inconsistently and can pass the
+comma literally to `/bin/sh`, producing `Illegal option -,`. Use Azure Cloud
+Shell to set the real argument array and verify it before execution.
+
+Open the `>_` Cloud Shell button in the portal, select **Bash**, and create a
+temporary file with `nano db-init.sh`. Paste this script into the file:
 
 ```sh
 set -eu
+: "${PGHOST:?PGHOST is missing}"
+: "${PG_ADMIN_USER:?PG_ADMIN_USER is missing}"
+: "${PG_ADMIN_PASSWORD:?PG_ADMIN_PASSWORD is missing}"
+: "${APP_DB_PASSWORD:?APP_DB_PASSWORD is missing}"
+
 export PGPASSWORD="$PG_ADMIN_PASSWORD"
-psql "host=$PGHOST port=5432 dbname=postgres user=$PG_ADMIN_USER sslmode=require" --set=ON_ERROR_STOP=1 --set=app_password="$APP_DB_PASSWORD" <<'SQL'
-SELECT format('CREATE ROLE ticketnest_app LOGIN PASSWORD %L', :'app_password')
-WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ticketnest_app') \gexec
-SELECT 'CREATE DATABASE ticketnest OWNER ticketnest_app'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'ticketnest') \gexec
-ALTER DATABASE ticketnest OWNER TO ticketnest_app;
-SQL
-unset PGPASSWORD
+ADMIN_CONNECTION="host=$PGHOST port=5432 dbname=postgres user=$PG_ADMIN_USER sslmode=require connect_timeout=15"
+
+echo "Creating or reusing application role"
+printf '%s\n' "SELECT 'CREATE ROLE ticketnest_app LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ticketnest_app') \gexec" |
+  psql "$ADMIN_CONNECTION" --set=ON_ERROR_STOP=1
+
+echo "Setting application-role password"
+printf '%s\n' "ALTER ROLE ticketnest_app WITH LOGIN PASSWORD :'app_password';" |
+  psql "$ADMIN_CONNECTION" --set=ON_ERROR_STOP=1 --set=app_password="$APP_DB_PASSWORD"
+
+echo "Creating or reusing application database"
+printf '%s\n' "SELECT 'CREATE DATABASE ticketnest OWNER ticketnest_app' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'ticketnest') \gexec" |
+  psql "$ADMIN_CONNECTION" --set=ON_ERROR_STOP=1
+psql "$ADMIN_CONNECTION" --set=ON_ERROR_STOP=1 -c 'ALTER DATABASE ticketnest OWNER TO ticketnest_app;'
+
+echo "Verifying application login"
 export PGPASSWORD="$APP_DB_PASSWORD"
-psql "host=$PGHOST port=5432 dbname=ticketnest user=ticketnest_app sslmode=require" --set=ON_ERROR_STOP=1 -c 'SELECT current_user, current_database();'
+psql "host=$PGHOST port=5432 dbname=ticketnest user=ticketnest_app sslmode=require connect_timeout=15" \
+  --set=ON_ERROR_STOP=1 -c 'SELECT current_user, current_database();'
 ```
 
-The definition stores `$APP_DB_PASSWORD`, not its value. Save, then **Execution history** > **Start a new execution**. Wait for `Succeeded`. Console logs should end with `ticketnest_app | ticketnest`.
+In `nano`, press Ctrl+O, Enter, then Ctrl+X. The file contains no secret values;
+the variables are expanded only inside the job.
+
+Do **not** pass this job's shell arguments through `az containerapp job update
+--args`. Some Azure CLI/Container Apps extension versions interpret `-c` as an
+Azure CLI option and return `unrecognized arguments: -c ...`. Other attempted
+quoting forms store the entire JSON-looking value as one string. Use an execution
+template instead; it represents `command` and `args` as real YAML arrays.
+
+Export the job's complete current execution template:
+
+```sh
+az containerapp job show \
+  --name job-ticketnest-dbinit \
+  --resource-group rg-ticketnest-devtest \
+  --query properties.template \
+  --output yaml > db-init-template.yaml
+```
+
+Open it with `nano db-init-template.yaml`. Under the container whose name is
+`postgres-client`, remove any existing `command:` and `args:` blocks and add the
+following at the same indentation level as `image:`, `name:`, and `resources:`:
+
+```yaml
+  command:
+  - /bin/sh
+  args:
+  - -c
+  - |
+    set -eu
+    : "${PGHOST:?PGHOST is missing}"
+    : "${PG_ADMIN_USER:?PG_ADMIN_USER is missing}"
+    : "${PG_ADMIN_PASSWORD:?PG_ADMIN_PASSWORD is missing}"
+    : "${APP_DB_PASSWORD:?APP_DB_PASSWORD is missing}"
+
+    export PGPASSWORD="$PG_ADMIN_PASSWORD"
+    ADMIN_CONNECTION="host=$PGHOST port=5432 dbname=postgres user=$PG_ADMIN_USER sslmode=require connect_timeout=15"
+
+    echo "Creating or reusing application role"
+    printf '%s\n' "SELECT 'CREATE ROLE ticketnest_app LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ticketnest_app') \\gexec" |
+      psql "$ADMIN_CONNECTION" --set=ON_ERROR_STOP=1
+
+    echo "Setting application-role password"
+    printf '%s\n' "ALTER ROLE ticketnest_app WITH LOGIN PASSWORD :'app_password';" |
+      psql "$ADMIN_CONNECTION" --set=ON_ERROR_STOP=1 --set=app_password="$APP_DB_PASSWORD"
+
+    echo "Creating or reusing application database"
+    printf '%s\n' "SELECT 'CREATE DATABASE ticketnest OWNER ticketnest_app' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'ticketnest') \\gexec" |
+      psql "$ADMIN_CONNECTION" --set=ON_ERROR_STOP=1
+    psql "$ADMIN_CONNECTION" --set=ON_ERROR_STOP=1 -c 'ALTER DATABASE ticketnest OWNER TO ticketnest_app;'
+
+    echo "Verifying application login"
+    export PGPASSWORD="$APP_DB_PASSWORD"
+    psql "host=$PGHOST port=5432 dbname=ticketnest user=ticketnest_app sslmode=require connect_timeout=15" \
+      --set=ON_ERROR_STOP=1 -c 'SELECT current_user, current_database();'
+```
+
+The indentation is significant. Save with Ctrl+O, Enter, then Ctrl+X. Start one
+execution using this template:
+
+```sh
+az containerapp job start \
+  --name job-ticketnest-dbinit \
+  --resource-group rg-ticketnest-devtest \
+  --yaml db-init-template.yaml
+```
+
+This overrides the template for this one execution without permanently changing
+the job. The exported template preserves the image, resources, environment
+variables, and secret references; only its command and argument arrays are
+changed. Before starting, confirm the exported container has non-empty values for
+`PGHOST` and `PG_ADMIN_USER` and secret references for both password variables.
+
+The definition stores `$APP_DB_PASSWORD`, not its value. Wait for the CLI-started
+execution to show `Succeeded`. Console logs should end with
+`ticketnest_app | ticketnest`.
 
 Troubleshooting:
 
