@@ -35,13 +35,13 @@ Admin VM subnet:  snet-admin                     10.20.3.0/24
 ACR, Key Vault, and PostgreSQL names are globally unique. Add a short suffix if an example is unavailable. Record the actual values because they must later match GitHub and the JDBC URL:
 
 ```text
-MY_ACR_NAME=
-MY_KEY_VAULT_NAME=
-MY_POSTGRES_SERVER_NAME=
-MY_POSTGRES_FQDN=
-MY_SUBSCRIPTION_ID=
-MY_TENANT_ID=
-MY_RUNTIME_IDENTITY_RESOURCE_ID=
+MY_ACR_NAME= ticketnest
+MY_KEY_VAULT_NAME= ticketnestkeyvault
+MY_POSTGRES_SERVER_NAME= ticketnest
+MY_POSTGRES_FQDN= ticketnest.postgres.database.azure.com
+MY_SUBSCRIPTION_ID= dcb453e4-e477-44df-a461-5b456791fb5a
+MY_TENANT_ID= 1b212e38-787d-48cb-83bb-5e4302f225e4
+MY_RUNTIME_IDENTITY_RESOURCE_ID= /subscriptions/dcb453e4-e477-44df-a461-5b456791fb5a/resourceGroups/rg-ticketnest-devtest/providers/Microsoft.ManagedIdentity/userAssignedIdentities/id-ticketnest-admin
 ```
 
 Use the same subscription, group, and region on every creation page. Wait for **Review + create** validation before clicking **Create**.
