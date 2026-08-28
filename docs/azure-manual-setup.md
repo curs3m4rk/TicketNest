@@ -16,7 +16,7 @@ Portal labels change occasionally. Use the **portal search term** below; the **r
 | Runtime identity | `Managed Identities` | `id-ticketnest-runtime` |
 | Hosting boundary | `Container Apps Environments` | `cae-ticketnest-devtest` |
 | Database server | `Azure Database for PostgreSQL flexible servers` | globally unique, e.g. `psql-ticketnest-curs3m4rk` |
-| One-time DB task | `Container Apps Jobs` | `job-ticketnest-dbinit` |
+| Temporary DB administration | `Virtual machines` | `vm-ticketnest-admin` |
 | Application | `Container Apps` | `ca-ticketnest-devtest` |
 | GitHub identity | `Microsoft Entra ID` > `App registrations` | `github-ticketnest-devtest` |
 
@@ -29,6 +29,7 @@ Resource group:   rg-ticketnest-devtest
 VNet:             vnet-ticketnest-devtest       10.20.0.0/16
 App subnet:       snet-containerapps             10.20.0.0/23
 Database subnet:  snet-postgres                  10.20.2.0/28
+Admin VM subnet:  snet-admin                     10.20.3.0/24
 ```
 
 ACR, Key Vault, and PostgreSQL names are globally unique. Add a short suffix if an example is unavailable. Record the actual values because they must later match GitHub and the JDBC URL:
@@ -62,6 +63,7 @@ Open **Subscriptions** > your subscription > **Settings** > **Resource providers
 
 ```text
 Microsoft.App
+Microsoft.Compute
 Microsoft.ContainerRegistry
 Microsoft.DBforPostgreSQL
 Microsoft.KeyVault
@@ -92,7 +94,7 @@ A budget notifies; it does not stop services. Cost data is delayed, so review **
 
 Put every resource below in this group. Never delete the group unless the complete environment is no longer needed.
 
-## 3. Create the VNet and two subnets
+## 3. Create the VNet and three subnets
 
 1. Search **Virtual networks** > **Create**.
 2. Basics: group `rg-ticketnest-devtest`, name `vnet-ticketnest-devtest`, region `Central India`.
@@ -110,9 +112,19 @@ Put every resource below in this group. Never delete the group unless the comple
    - Size: `/28`
    - NAT gateway, NSG, route table: `None`
    - Delegation: `Microsoft.DBforPostgreSQL/flexibleServers`; display text may be **PostgreSQL flexible server**
-6. **Review + create** > **Create**.
+6. Add the temporary administration subnet:
+   - Name: `snet-admin`
+   - Starting address: `10.20.3.0`
+   - Size: `/24`
+   - NAT gateway, NSG, route table: `None`
+   - Service endpoints: none
+   - Subnet delegation: `None`
+7. **Review + create** > **Create**.
 
-Checkpoint: VNet > **Settings** > **Subnets** must show these two subnets. The app subnet has no delegation; the database subnet is delegated only to PostgreSQL Flexible Server.
+Checkpoint: VNet > **Settings** > **Subnets** must show these three subnets.
+The app and administration subnets have no delegation; the database subnet is
+delegated only to PostgreSQL Flexible Server. The administration subnet is used
+only by a temporary VM during database initialization and can be deleted later.
 
 ## 4. Create Log Analytics
 
@@ -196,7 +208,10 @@ Repeat these steps separately on `ticketnest-db-password` and `ticketnest-jwt-se
 3. Role `Key Vault Secrets User`; member managed identity `id-ticketnest-runtime`.
 4. Assign.
 
-Do not grant the admin-password secret yet. That access is temporary during DB initialization.
+Never grant the runtime identity access to `postgres-admin-password`. Database
+initialization below reads the administrator password interactively from your
+own Key Vault access; the application identity needs only its database password
+and JWT secret.
 
 ## 8. Create the Container Apps environment
 
@@ -265,181 +280,175 @@ Checkpoint: its Overview must show Workload profiles, the intended subnet, and L
 
 Your laptop intentionally cannot connect directly. Private VNet integration is chosen at server creation and cannot simply be switched later.
 
-## 10. Initialize the empty application database with a one-time job
+## 10. Initialize the empty database from a temporary Ubuntu VM
 
-This `psql` job runs inside the Container Apps environment, where it can resolve the private DB. It creates only the empty `ticketnest` database and its owner. Flyway creates all application tables on first app startup.
+Create a short-lived Linux VM in `snet-admin`, connect to PostgreSQL over its
+private VNet address, and run `psql` interactively. This avoids placing database
+passwords in commands or deployment logs. It creates only the empty `ticketnest`
+database and its owner; Flyway creates the application tables during the first
+TicketNest startup.
 
-### Temporarily grant the admin secret
+If you previously attempted a Container Apps initialization job, leave it stopped.
+Remove any `Key Vault Secrets User` assignment that gives
+`id-ticketnest-runtime` access to `postgres-admin-password`; the VM procedure does
+not need that assignment.
 
-Key Vault > `postgres-admin-password` > **Access control (IAM)** > **Add role assignment**: role `Key Vault Secrets User`, member `id-ticketnest-runtime`. Assign and wait several minutes.
+### Create the temporary VM
 
-### Create a harmless manual job first
+1. Search **Virtual machines** > **Create** > **Azure virtual machine**.
+2. On **Basics**:
+   - Resource group: `rg-ticketnest-devtest`
+   - Virtual machine name: `vm-ticketnest-admin`
+   - Region: `Central India`
+   - Availability options: no infrastructure redundancy required
+   - Security type: `Trusted launch` or `Standard`
+   - Image: `Ubuntu Server 24.04 LTS`
+   - Size: `Standard_B1s`, or the smallest available Burstable size
+   - Authentication type: `SSH public key`
+   - Username: `azureuser`
+   - SSH key source: **Generate new key pair**
+   - Key pair name: `key-ticketnest-admin`
+   - Public inbound ports: allow `SSH (22)`
+3. On **Disks**, use the least expensive standard OS disk offered.
+4. On **Networking**:
+   - VNet: `vnet-ticketnest-devtest`
+   - Subnet: `snet-admin`
+   - Public IP: create a temporary one
+   - NIC network security group: `Basic`
+   - Public inbound ports: `SSH`
+   - Accelerated networking: disabled
+5. Review, create, and download the generated private-key file.
 
-1. Search **Container Apps Jobs** > **Create**.
-2. Set job name `job-ticketnest-dbinit`, environment `cae-ticketnest-devtest`, trigger `Manual`, replica timeout `600`, retry limit `0`, parallelism `1`, completion count `1`.
-3. Container settings:
-   - Name: `postgres-client`
-   - Public image / **Docker Hub or other registries**
-   - Registry server: `docker.io`
-   - Image/tag: `library/postgres:17`
-   - CPU `0.25`, memory `0.5 GiB`
-   - Command override: `/bin/true`
-   - Leave Arguments override empty; Cloud Shell will set the final command later
-4. Create it, but do not start it.
+The VM and PostgreSQL are in different subnets of the same VNet. PostgreSQL
+remains private; only SSH to the temporary VM is public.
 
-### Assign identity and secret references
+### Restrict SSH before connecting
 
-1. Job > **Identity** > **User assigned** > **Add** `id-ticketnest-runtime`.
-2. Job > **Secrets** > add:
+The basic VM rule can initially allow SSH from the whole Internet. Open the VM >
+**Networking** > **Network settings**, edit its inbound SSH rule, and set its
+source to **My IP address** (or your exact public IP with `/32`). Confirm the
+destination port is `22`, then save.
 
-| Job secret | Type | Versionless Key Vault URL | Identity |
-|---|---|---|---|
-| `pg-admin-password` | Key Vault reference | `https://<MY_KEY_VAULT_NAME>.vault.azure.net/secrets/postgres-admin-password` | runtime identity |
-| `app-db-password` | Key Vault reference | `https://<MY_KEY_VAULT_NAME>.vault.azure.net/secrets/ticketnest-db-password` | runtime identity |
+### Connect and install `psql`
 
-Do not include a version GUID at the URL end. If retrieval fails, wait for RBAC propagation and confirm the identity is attached.
+Copy the VM public IP from its Overview. From local PowerShell:
 
-### Configure and execute initialization
+```powershell
+ssh -i "C:\path\to\key-ticketnest-admin.pem" azureuser@<VM_PUBLIC_IP>
+```
 
-Open Job > **Containers** > **Edit** (sometimes **Edit and deploy**) and edit `postgres-client`. Add:
+If Windows rejects overly broad key-file permissions:
 
-| Environment variable | Source | Value |
-|---|---|---|
-| `PGHOST` | Manual | exact `MY_POSTGRES_FQDN` |
-| `PG_ADMIN_USER` | Manual | `ticketnestadmin` |
-| `PG_ADMIN_PASSWORD` | Secret reference | `pg-admin-password` |
-| `APP_DB_PASSWORD` | Secret reference | `app-db-password` |
+```powershell
+$keyPath = "C:\path\to\key-ticketnest-admin.pem"
+icacls $keyPath /inheritance:r
+icacls $keyPath /grant:r "$($env:USERNAME):(R)"
+```
 
-Do not use the portal's **Arguments override** box for this script. Portal
-versions have handled that comma-separated field inconsistently and can pass the
-comma literally to `/bin/sh`, producing `Illegal option -,`. Use Azure Cloud
-Shell to set the real argument array and verify it before execution.
-
-Open the `>_` Cloud Shell button in the portal, select **Bash**, and create a
-temporary file with `nano db-init.sh`. Paste this script into the file:
+Inside the VM:
 
 ```sh
-set -eu
-: "${PGHOST:?PGHOST is missing}"
-: "${PG_ADMIN_USER:?PG_ADMIN_USER is missing}"
-: "${PG_ADMIN_PASSWORD:?PG_ADMIN_PASSWORD is missing}"
-: "${APP_DB_PASSWORD:?APP_DB_PASSWORD is missing}"
-
-export PGPASSWORD="$PG_ADMIN_PASSWORD"
-ADMIN_CONNECTION="host=$PGHOST port=5432 dbname=postgres user=$PG_ADMIN_USER sslmode=require connect_timeout=15"
-
-echo "Creating or reusing application role"
-printf '%s\n' "SELECT 'CREATE ROLE ticketnest_app LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ticketnest_app') \gexec" |
-  psql "$ADMIN_CONNECTION" --set=ON_ERROR_STOP=1
-
-echo "Setting application-role password"
-printf '%s\n' "ALTER ROLE ticketnest_app WITH LOGIN PASSWORD :'app_password';" |
-  psql "$ADMIN_CONNECTION" --set=ON_ERROR_STOP=1 --set=app_password="$APP_DB_PASSWORD"
-
-echo "Creating or reusing application database"
-printf '%s\n' "SELECT 'CREATE DATABASE ticketnest OWNER ticketnest_app' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'ticketnest') \gexec" |
-  psql "$ADMIN_CONNECTION" --set=ON_ERROR_STOP=1
-psql "$ADMIN_CONNECTION" --set=ON_ERROR_STOP=1 -c 'ALTER DATABASE ticketnest OWNER TO ticketnest_app;'
-
-echo "Verifying application login"
-export PGPASSWORD="$APP_DB_PASSWORD"
-psql "host=$PGHOST port=5432 dbname=ticketnest user=ticketnest_app sslmode=require connect_timeout=15" \
-  --set=ON_ERROR_STOP=1 -c 'SELECT current_user, current_database();'
+sudo apt-get update
+sudo apt-get install -y postgresql-client
+psql --version
 ```
 
-In `nano`, press Ctrl+O, Enter, then Ctrl+X. The file contains no secret values;
-the variables are expanded only inside the job.
+### Check private DNS and connectivity
 
-Do **not** pass this job's shell arguments through `az containerapp job update
---args`. Some Azure CLI/Container Apps extension versions interpret `-c` as an
-Azure CLI option and return `unrecognized arguments: -c ...`. Other attempted
-quoting forms store the entire JSON-looking value as one string. Use an execution
-template instead; it represents `command` and `args` as real YAML arrays.
-
-Export the job's complete current execution template:
+Use the exact `MY_POSTGRES_FQDN` copied from the server Overview:
 
 ```sh
-az containerapp job show \
-  --name job-ticketnest-dbinit \
-  --resource-group rg-ticketnest-devtest \
-  --query properties.template \
-  --output yaml > db-init-template.yaml
+getent hosts <MY_POSTGRES_FQDN>
+pg_isready --host=<MY_POSTGRES_FQDN> --port=5432 --timeout=10
 ```
 
-Open it with `nano db-init-template.yaml`. Under the container whose name is
-`postgres-client`, remove any existing `command:` and `args:` blocks and add the
-following at the same indentation level as `image:`, `name:`, and `resources:`:
+`getent` should return a private address, normally in the `10.20.0.0/16` VNet,
+and `pg_isready` should report `accepting connections`.
 
-```yaml
-  command:
-  - /bin/sh
-  args:
-  - -c
-  - |
-    set -eu
-    : "${PGHOST:?PGHOST is missing}"
-    : "${PG_ADMIN_USER:?PG_ADMIN_USER is missing}"
-    : "${PG_ADMIN_PASSWORD:?PG_ADMIN_PASSWORD is missing}"
-    : "${APP_DB_PASSWORD:?APP_DB_PASSWORD is missing}"
+- No DNS result: link the PostgreSQL private DNS zone to
+  `vnet-ticketnest-devtest`.
+- Timeout: check that the VM uses `snet-admin`, PostgreSQL uses `snet-postgres`,
+  and no NSG or route table blocks VNet traffic on TCP 5432.
 
-    export PGPASSWORD="$PG_ADMIN_PASSWORD"
-    ADMIN_CONNECTION="host=$PGHOST port=5432 dbname=postgres user=$PG_ADMIN_USER sslmode=require connect_timeout=15"
+### Create or repair the application role and database
 
-    echo "Creating or reusing application role"
-    printf '%s\n' "SELECT 'CREATE ROLE ticketnest_app LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ticketnest_app') \\gexec" |
-      psql "$ADMIN_CONNECTION" --set=ON_ERROR_STOP=1
+Open Key Vault in the portal so you can retrieve `postgres-admin-password` and
+`ticketnest-db-password` when prompted. Never paste either value into this guide,
+a shell command, or a support message.
 
-    echo "Setting application-role password"
-    printf '%s\n' "ALTER ROLE ticketnest_app WITH LOGIN PASSWORD :'app_password';" |
-      psql "$ADMIN_CONNECTION" --set=ON_ERROR_STOP=1 --set=app_password="$APP_DB_PASSWORD"
-
-    echo "Creating or reusing application database"
-    printf '%s\n' "SELECT 'CREATE DATABASE ticketnest OWNER ticketnest_app' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'ticketnest') \\gexec" |
-      psql "$ADMIN_CONNECTION" --set=ON_ERROR_STOP=1
-    psql "$ADMIN_CONNECTION" --set=ON_ERROR_STOP=1 -c 'ALTER DATABASE ticketnest OWNER TO ticketnest_app;'
-
-    echo "Verifying application login"
-    export PGPASSWORD="$APP_DB_PASSWORD"
-    psql "host=$PGHOST port=5432 dbname=ticketnest user=ticketnest_app sslmode=require connect_timeout=15" \
-      --set=ON_ERROR_STOP=1 -c 'SELECT current_user, current_database();'
-```
-
-The indentation is significant. Save with Ctrl+O, Enter, then Ctrl+X. Start one
-execution using this template:
+Connect as the PostgreSQL administrator:
 
 ```sh
-az containerapp job start \
-  --name job-ticketnest-dbinit \
-  --resource-group rg-ticketnest-devtest \
-  --yaml db-init-template.yaml
+psql "host=<MY_POSTGRES_FQDN> port=5432 dbname=postgres user=ticketnestadmin sslmode=require connect_timeout=15"
 ```
 
-This overrides the template for this one execution without permanently changing
-the job. The exported template preserves the image, resources, environment
-variables, and secret references; only its command and argument arrays are
-changed. Before starting, confirm the exported container has non-empty values for
-`PGHOST` and `PG_ADMIN_USER` and secret references for both password variables.
+Enter `postgres-admin-password` at the password prompt. Inside `psql`, run:
 
-The definition stores `$APP_DB_PASSWORD`, not its value. Wait for the CLI-started
-execution to show `Succeeded`. Console logs should end with
-`ticketnest_app | ticketnest`.
+```sql
+\set ON_ERROR_STOP on
 
-Troubleshooting:
+SELECT 'CREATE ROLE ticketnest_app LOGIN'
+WHERE NOT EXISTS (
+    SELECT FROM pg_roles WHERE rolname = 'ticketnest_app'
+)
+\gexec
 
-- `could not translate host name`: private DNS zone is not linked to the VNet.
-- timeout: wrong Container Apps environment/VNet or PostgreSQL network configuration.
-- authentication failed: Key Vault admin value differs from the password used to create PostgreSQL.
-- Key Vault reference error: identity, secret-scope RBAC, or propagation delay.
+ALTER ROLE ticketnest_app WITH LOGIN;
+\password ticketnest_app
 
-### Remove administrative access immediately
+SELECT 'CREATE DATABASE ticketnest OWNER ticketnest_app'
+WHERE NOT EXISTS (
+    SELECT FROM pg_database WHERE datname = 'ticketnest'
+)
+\gexec
 
-After success:
+ALTER DATABASE ticketnest OWNER TO ticketnest_app;
+\l ticketnest
+\q
+```
 
-1. Key Vault > `postgres-admin-password` > **Access control (IAM)** > role assignments.
-2. Remove only the runtime identity's `Key Vault Secrets User` assignment at this secret scope.
-3. Delete only `job-ticketnest-dbinit`, after confirming its exact name.
+For `\password ticketnest_app`, enter `ticketnest-db-password` twice. This psql
+command prevents the password from being recorded in SQL or shell history. The
+commands are safe to rerun after a partially completed earlier attempt.
 
-Keep the admin secret in Key Vault for emergency administration. The application can no longer read it.
+### Verify the application login and DDL permission
+
+Reconnect using the application role:
+
+```sh
+psql "host=<MY_POSTGRES_FQDN> port=5432 dbname=ticketnest user=ticketnest_app sslmode=require connect_timeout=15"
+```
+
+Enter `ticketnest-db-password`, then run:
+
+```sql
+SELECT current_user, current_database();
+BEGIN;
+CREATE TABLE __permission_check(id integer);
+ROLLBACK;
+\dt
+\q
+```
+
+The identity query must return `ticketnest_app | ticketnest`. The temporary table
+creation must succeed, and `\dt` should show no application tables yet. Flyway,
+not this administration procedure, creates those tables on first deployment.
+
+### Delete all temporary administration resources
+
+After verification:
+
+1. VM `vm-ticketnest-admin` > **Delete**.
+2. Select its OS disk, network interface, and public IP for deletion.
+3. Confirm that those exact resources belong to the temporary VM, then delete.
+4. Delete the downloaded private-key file when it is no longer needed.
+5. Delete `snet-admin` if nothing uses it.
+6. Delete the stopped `job-ticketnest-dbinit` if it exists.
+7. Confirm again that `id-ticketnest-runtime` has no access to
+   `postgres-admin-password`.
+
+Do **not** delete `rg-ticketnest-devtest`; it contains the actual environment.
+Keep the administrator password in Key Vault for emergency administration.
 
 ## 11. Create and configure the Container App
 
@@ -701,8 +710,9 @@ When permanently finished, inspect and back up anything needed, then delete the 
 - [Container Apps Key Vault references](https://learn.microsoft.com/azure/container-apps/manage-secrets)
 - [ACR pull with managed identity](https://learn.microsoft.com/azure/container-apps/managed-identity-image-pull)
 - [Container Apps health probes](https://learn.microsoft.com/azure/container-apps/health-probes)
-- [Container Apps jobs](https://learn.microsoft.com/azure/container-apps/jobs)
 - [PostgreSQL private networking](https://learn.microsoft.com/azure/postgresql/flexible-server/concepts-networking-private)
+- [Connect privately to PostgreSQL from an Azure VM](https://learn.microsoft.com/azure/postgresql/connectivity/quickstart-create-connect-server-vnet)
+- [Create an Azure Linux VM in the portal](https://learn.microsoft.com/azure/virtual-machines/linux/quick-create-portal)
 - [Create PostgreSQL Flexible Server](https://learn.microsoft.com/azure/postgresql/configure-maintain/quickstart-create-server)
 - [Create Key Vault](https://learn.microsoft.com/azure/key-vault/general/quick-create-portal)
 - [Create ACR](https://learn.microsoft.com/azure/container-registry/container-registry-get-started-portal)
