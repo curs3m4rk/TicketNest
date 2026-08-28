@@ -250,7 +250,7 @@ Checkpoint: its Overview must show Workload profiles, the intended subnet, and L
    - Availability zone: `No preference`
    - High availability: `Disabled`
    - Authentication: `PostgreSQL authentication only`
-   - Administrator login: `ticketnestadmin`
+   - Administrator login: `postgresadmin`
    - Password: exact `postgres-admin-password` value
 4. **Configure server** under Compute + storage:
    - Compute tier: `Burstable`
@@ -379,7 +379,7 @@ a shell command, or a support message.
 Connect as the PostgreSQL administrator:
 
 ```sh
-psql "host=<MY_POSTGRES_FQDN> port=5432 dbname=postgres user=ticketnestadmin sslmode=require connect_timeout=15"
+psql "host=<MY_POSTGRES_FQDN> port=5432 dbname=postgres user=postgresadmin sslmode=require connect_timeout=15"
 ```
 
 Enter `postgres-admin-password` at the password prompt. Inside `psql`, run:
