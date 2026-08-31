@@ -20,8 +20,9 @@ TicketNest is a production-oriented ticket booking backend built as a hands-on p
 ## Development
 
 TicketNest uses Flyway for all database schema changes. Hibernate validates the
-schema and never creates or updates it. See the [manual Azure setup](docs/azure-manual-setup.md)
-for the production-like Dev/Test environment and GitHub CI/CD configuration.
+schema and never creates or updates it. See the
+[manual Render and Neon setup](docs/render-neon-manual-setup.md) for the free,
+production-like Dev/Test environment and GitHub CI/CD configuration.
 
 ### Run the complete stack with Docker
 
