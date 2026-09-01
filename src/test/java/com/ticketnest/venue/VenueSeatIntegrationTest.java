@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -35,6 +36,7 @@ class VenueSeatIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private SeatRepository seatRepository;
 
+    private static final AtomicLong PHONE_COUNTER = new AtomicLong(55_510_000_000L);
     private final ObjectMapper objectMapper = new ObjectMapper();
     private String jwtToken;
     private Venue venue;
@@ -52,11 +54,12 @@ class VenueSeatIntegrationTest extends BaseIntegrationTest {
         venue = venueRepository.save(venue);
 
         String email = "seats-" + UUID.randomUUID() + "@example.com";
+        String phoneNumber = "+1" + PHONE_COUNTER.getAndIncrement();
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"email":"%s","password":"Password123","firstName":"Seat","lastName":"Tester"}
-                                """.formatted(email)))
+                                {"email":"%s","password":"Password123","firstName":"Seat","lastName":"Tester","phoneNumber":"%s"}
+                                """.formatted(email, phoneNumber)))
                 .andExpect(status().isCreated());
 
         MvcResult login = mockMvc.perform(post("/auth/login")

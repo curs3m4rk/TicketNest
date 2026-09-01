@@ -11,6 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -35,7 +36,8 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                     "email": "test@example.com",
                     "password": "Password123",
                     "firstName": "Test",
-                    "lastName": "User"
+                    "lastName": "User",
+                    "phoneNumber": "+15550000001"
                 }
                 """;
 
@@ -48,9 +50,11 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.email").value("test@example.com"))
                 .andExpect(jsonPath("$.firstName").value("Test"))
                 .andExpect(jsonPath("$.lastName").value("User"))
+                .andExpect(jsonPath("$.phoneNumber").value("+15550000001"))
                 .andExpect(jsonPath("$.role").value("USER"));
 
         // Verify it actually reached the database
+        assertThat(userRepository.findByEmail("test@example.com").orElseThrow().getPhoneNumber()).isEqualTo("+15550000001");
         assert userRepository.existsByEmail("test@example.com");
     }
 
@@ -63,7 +67,8 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                     "email": "login@example.com",
                     "password": "Password123",
                     "firstName": "Login",
-                    "lastName": "User"
+                    "lastName": "User",
+                    "phoneNumber": "+15550000002"
                 }
                 """;
 
@@ -91,6 +96,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.token").exists())
                 .andExpect(jsonPath("$.refreshToken").exists())
                 .andExpect(jsonPath("$.email").value("login@example.com"))
+                .andExpect(jsonPath("$.phoneNumber").value("+15550000002"))
                 .andExpect(jsonPath("$.role").value("USER"));
     }
 
@@ -101,7 +107,8 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                     "email": "duplicate@example.com",
                     "password": "Password123",
                     "firstName": "First",
-                    "lastName": "User"
+                    "lastName": "User",
+                    "phoneNumber": "+15550000003"
                 }
                 """;
 
@@ -129,7 +136,8 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                     "email": "wrongpass@example.com",
                     "password": "Password123",
                     "firstName": "Wrong",
-                    "lastName": "Pass"
+                    "lastName": "Pass",
+                    "phoneNumber": "+15550000005"
                 }
                 """;
 
@@ -172,7 +180,8 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                     "email": "jwtuser@example.com",
                     "password": "Password123",
                     "firstName": "JWT",
-                    "lastName": "User"
+                    "lastName": "User",
+                    "phoneNumber": "+15550000006"
                 }
                 """;
 
@@ -234,7 +243,8 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                     "email": "refreshtoken@example.com",
                     "password": "Password123",
                     "firstName": "Refresh",
-                    "lastName": "User"
+                    "lastName": "User",
+                    "phoneNumber": "+15550000007"
                 }
                 """;
 
@@ -296,7 +306,8 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                     "email": "reuse@example.com",
                     "password": "Password123",
                     "firstName": "Reuse",
-                    "lastName": "User"
+                    "lastName": "User",
+                    "phoneNumber": "+15550000008"
                 }
                 """;
 
@@ -363,7 +374,8 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                     "email": "logout@example.com",
                     "password": "Password123",
                     "firstName": "Logout",
-                    "lastName": "User"
+                    "lastName": "User",
+                    "phoneNumber": "+15550000009"
                 }
                 """;
 
@@ -428,7 +440,8 @@ mockMvc.perform(
                     "email": "invalid",
                     "password": "Password123",
                     "firstName": "Test",
-                    "lastName": "User"
+                    "lastName": "User",
+                    "phoneNumber": "+15550000010"
                 }
                 """;
 
@@ -447,7 +460,8 @@ mockMvc.perform(
                     "email": "shortpass@example.com",
                     "password": "short",
                     "firstName": "Test",
-                    "lastName": "User"
+                    "lastName": "User",
+                    "phoneNumber": "+15550000011"
                 }
                 """;
 

@@ -34,7 +34,7 @@ public class AuthController {
         try {
             RegisterResponse response = authService.register(request);
             return ResponseEntity.status(201).body(response);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | DataIntegrityViolationException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
     }

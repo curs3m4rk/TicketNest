@@ -59,14 +59,15 @@ class ValidationIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"email":"invalid","password":"short","firstName":"","lastName":"X"}
+                                {"email":"invalid","password":"short","firstName":"","lastName":"X","phoneNumber":"invalid"}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Validation Failed"))
                 .andExpect(jsonPath("$.validationErrors.email", hasItem("Email must be valid")))
                 .andExpect(jsonPath("$.validationErrors.password", hasItem("Password must be between 8 and 100 characters")))
                 .andExpect(jsonPath("$.validationErrors.firstName", hasItem("First name is required")))
-                .andExpect(jsonPath("$.validationErrors.lastName", hasItem("Last name must be between 2 and 50 characters")));
+                .andExpect(jsonPath("$.validationErrors.lastName", hasItem("Last name must be between 2 and 50 characters")))
+                .andExpect(jsonPath("$.validationErrors.phoneNumber", hasItem("Phone number must be a valid E.164 number")));
     }
 
     @Test

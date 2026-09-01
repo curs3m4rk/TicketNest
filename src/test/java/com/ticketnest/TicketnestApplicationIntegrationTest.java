@@ -17,12 +17,14 @@ class TicketnestApplicationIntegrationTest extends BaseIntegrationTest {
     private JdbcTemplate jdbcTemplate;
 
     @Test
-    void flywayCreatesAndValidatesTheInitialSchema() {
+    void flywayCreatesAndValidatesTheSchema() {
         var applied = flyway.info().applied();
 
-        assertThat(applied).hasSize(1);
+        assertThat(applied).hasSize(2);
         assertThat(applied[0].getVersion().getVersion()).isEqualTo("1");
         assertThat(applied[0].getDescription()).isEqualTo("initial schema");
+        assertThat(applied[1].getVersion().getVersion()).isEqualTo("2");
+        assertThat(applied[1].getDescription()).isEqualTo("add user phone");
 
         Integer tableCount = jdbcTemplate.queryForObject("""
                 SELECT count(*)

@@ -45,12 +45,16 @@ public class AuthService {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("Email already registered");
         }
+        if (userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+            throw new IllegalArgumentException("Phone number already registered");
+        }
 
         User user = new User();
         user.setEmail(request.getEmail());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
+        user.setPhoneNumber(request.getPhoneNumber());
         user.setRole(Role.USER);
         user.setActive(true);
         user.setCreatedAt(Instant.now());
@@ -143,6 +147,7 @@ public class AuthService {
         response.setEmail(user.getEmail());
         response.setFirstName(user.getFirstName());
         response.setLastName(user.getLastName());
+        response.setPhoneNumber(user.getPhoneNumber());
         response.setRole(user.getRole());
         return response;
     }
@@ -193,6 +198,7 @@ public class AuthService {
         response.setEmail(user.getEmail());
         response.setFirstName(user.getFirstName());
         response.setLastName(user.getLastName());
+        response.setPhoneNumber(user.getPhoneNumber());
         response.setRole(user.getRole());
         return response;
     }

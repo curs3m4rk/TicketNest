@@ -72,9 +72,10 @@ class ShowIntegrationTest extends BaseIntegrationTest {
                     "email": "%s",
                     "password": "Password123",
                     "firstName": "Show",
-                    "lastName": "Tester"
+                    "lastName": "Tester",
+                    "phoneNumber": "+1666000%04d"
                 }
-                """.formatted(uniqueEmail);
+                """.formatted(uniqueEmail, testCounter);
 
         mockMvc.perform(
                         post("/auth/register")
