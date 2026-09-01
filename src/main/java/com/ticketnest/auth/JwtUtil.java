@@ -30,12 +30,11 @@ public class JwtUtil {
      * Generates a JWT for the given user email and role.
      * Includes: subject=email, role claim, issuedAt, expiration.
      */
-    public String generateToken(String email, String role) {
+    public String generateToken(String email) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expirationMs);
         return Jwts.builder()
                 .subject(email)
-                .claim("role", role)
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(secretKey, Jwts.SIG.HS256)

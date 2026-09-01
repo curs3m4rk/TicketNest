@@ -5,6 +5,7 @@ import com.ticketnest.auth.JwtUtil;
 import com.ticketnest.entity.Role;
 import com.ticketnest.entity.User;
 import com.ticketnest.repository.UserRepository;
+import com.ticketnest.repository.RoleRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,9 @@ class ValidationIntegrationTest extends BaseIntegrationTest {
     private UserRepository userRepository;
 
     @Autowired
+    private RoleRepository roleRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -47,11 +51,11 @@ class ValidationIntegrationTest extends BaseIntegrationTest {
         admin.setPasswordHash(passwordEncoder.encode("Password123"));
         admin.setFirstName("Validation");
         admin.setLastName("Admin");
-        admin.setRole(Role.ADMIN);
+        admin.getRoles().add(roleRepository.findByName(Role.ADMIN).orElseThrow());
         admin.setActive(true);
         admin.setCreatedAt(Instant.now());
         userRepository.save(admin);
-        adminToken = jwtUtil.generateToken(email, Role.ADMIN.name());
+        adminToken = jwtUtil.generateToken(email);
     }
 
     @Test

@@ -5,6 +5,8 @@ import com.ticketnest.entity.Role;
 import com.ticketnest.entity.User;
 import com.ticketnest.repository.RefreshTokenRepository;
 import com.ticketnest.repository.UserRepository;
+import com.ticketnest.repository.RoleRepository;
+import com.ticketnest.common.dto.RoleSummary;
 import com.ticketnest.auth.dto.LoginRequest;
 import com.ticketnest.auth.dto.LoginResponse;
 import com.ticketnest.auth.dto.RegisterRequest;
@@ -21,6 +23,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.UUID;
+import java.util.Comparator;
 
 /**
  * Authentication business logic: registration, login, token refresh, logout.
@@ -31,6 +34,7 @@ import java.util.UUID;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
@@ -55,7 +59,9 @@ public class AuthService {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setPhoneNumber(request.getPhoneNumber());
-        user.setRole(Role.USER);
+        Role userRole = roleRepository.findByName(Role.USER)
+                .orElseThrow(() -> new IllegalStateException("System USER role is missing"));
+        user.getRoles().add(userRole);
         user.setActive(true);
         user.setCreatedAt(Instant.now());
 
@@ -136,7 +142,7 @@ public class AuthService {
     }
 
     private LoginResponse issueLoginTokens(User user) {
-        String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
+        String accessToken = jwtUtil.generateToken(user.getEmail());
         String refreshToken = generateOpaqueToken();
         saveRefreshToken(user, refreshToken);
 
@@ -148,12 +154,12 @@ public class AuthService {
         response.setFirstName(user.getFirstName());
         response.setLastName(user.getLastName());
         response.setPhoneNumber(user.getPhoneNumber());
-        response.setRole(user.getRole());
+        response.setRoles(roleSummaries(user));
         return response;
     }
 
     private TokenResponse issueRefreshTokens(User user) {
-        String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
+        String accessToken = jwtUtil.generateToken(user.getEmail());
         String refreshToken = generateOpaqueToken();
         saveRefreshToken(user, refreshToken);
 
@@ -192,6 +198,13 @@ public class AuthService {
         }
     }
 
+    private java.util.List<RoleSummary> roleSummaries(User user) {
+        return user.getRoles().stream()
+                .sorted(Comparator.comparing(Role::getName))
+                .map(RoleSummary::from)
+                .toList();
+    }
+
     private RegisterResponse toRegisterResponse(User user) {
         RegisterResponse response = new RegisterResponse();
         response.setId(user.getId());
@@ -199,7 +212,7 @@ public class AuthService {
         response.setFirstName(user.getFirstName());
         response.setLastName(user.getLastName());
         response.setPhoneNumber(user.getPhoneNumber());
-        response.setRole(user.getRole());
+        response.setRoles(roleSummaries(user));
         return response;
     }
 }

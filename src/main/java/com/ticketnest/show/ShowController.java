@@ -50,7 +50,7 @@ public class ShowController {
 
     /** Creates a new show. Returns 201 with created show. */
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('SHOW_MANAGE')")
     public ResponseEntity<ShowResponse> createShow(@Valid @RequestBody ShowRequest request) {
         ShowResponse response = showService.createShow(request);
         return ResponseEntity.status(201).body(response);
@@ -58,14 +58,14 @@ public class ShowController {
 
     /** Updates an existing show (including venue reassignment). */
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('SHOW_MANAGE')")
     public ShowResponse updateShow(@PathVariable UUID id, @Valid @RequestBody ShowRequest request) {
         return showService.updateShow(id, request);
     }
 
     /** Deletes a show. Returns 204 no content. */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('SHOW_MANAGE')")
     public ResponseEntity<Void> deleteShow(@PathVariable UUID id) {
         showService.deleteShow(id);
         return ResponseEntity.noContent().build();

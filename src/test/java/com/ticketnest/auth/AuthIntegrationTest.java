@@ -51,7 +51,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.firstName").value("Test"))
                 .andExpect(jsonPath("$.lastName").value("User"))
                 .andExpect(jsonPath("$.phoneNumber").value("+15550000001"))
-                .andExpect(jsonPath("$.role").value("USER"));
+                .andExpect(jsonPath("$.roles[0].name").value("USER"));
 
         // Verify it actually reached the database
         assertThat(userRepository.findByEmail("test@example.com").orElseThrow().getPhoneNumber()).isEqualTo("+15550000001");
@@ -97,7 +97,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.refreshToken").exists())
                 .andExpect(jsonPath("$.email").value("login@example.com"))
                 .andExpect(jsonPath("$.phoneNumber").value("+15550000002"))
-                .andExpect(jsonPath("$.role").value("USER"));
+                .andExpect(jsonPath("$.roles[0].name").value("USER"));
     }
 
     @Test

@@ -14,7 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.UUID;
 
@@ -31,12 +30,8 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
-        try {
-            RegisterResponse response = authService.register(request);
-            return ResponseEntity.status(201).body(response);
-        } catch (IllegalArgumentException | DataIntegrityViolationException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
+        RegisterResponse response = authService.register(request);
+        return ResponseEntity.status(201).body(response);
     }
 
     @PostMapping("/login")

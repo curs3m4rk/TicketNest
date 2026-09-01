@@ -1,9 +1,12 @@
 package com.ticketnest.common;
 
 import com.ticketnest.common.dto.ErrorResponse;
+import com.ticketnest.common.ConflictException;
+import org.springframework.dao.DataIntegrityViolationException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -104,6 +107,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(body);
     }
 
+    @ExceptionHandler({ConflictException.class, DataIntegrityViolationException.class})
+    public ResponseEntity<ErrorResponse> handleConflict(RuntimeException ex, jakarta.servlet.http.HttpServletRequest request) {
+        String message = ex instanceof ConflictException ? ex.getMessage() : "Request conflicts with existing data";
+        ErrorResponse body = ErrorResponse.of(HttpStatus.CONFLICT.value(), "Conflict", message, request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex, jakarta.servlet.http.HttpServletRequest request) {
         ErrorResponse body = ErrorResponse.of(
@@ -140,6 +150,12 @@ public class GlobalExceptionHandler {
     }
 
     /** Handles RuntimeException thrown for "not found" in services. */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex, jakarta.servlet.http.HttpServletRequest request) {
+        ErrorResponse body = ErrorResponse.of(HttpStatus.FORBIDDEN.value(), "Forbidden", "Access is denied", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntime(RuntimeException ex, jakarta.servlet.http.HttpServletRequest request) {
         String msg = ex.getMessage();

@@ -34,9 +34,13 @@ public class User {
     @Column(name = "phone_number", length = 16, unique = true)
     private String phoneNumber;
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private Role role = Role.USER;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private java.util.Set<Role> roles = new java.util.HashSet<>();
 
     @Column(nullable = false)
     private boolean active = true;

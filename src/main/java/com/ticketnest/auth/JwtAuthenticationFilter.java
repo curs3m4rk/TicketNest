@@ -1,5 +1,6 @@
 package com.ticketnest.auth;
 
+import com.ticketnest.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,54 +16,43 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.stream.Stream;
 
-/**
- * JWT authentication filter.
- * Runs once per request; extracts Bearer token, validates, sets SecurityContext.
- * Skips /auth/** and Swagger paths (handled by SecurityFilterChain permitAll).
- */
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-
     private final JwtUtil jwtUtil;
+    private final UserRepository userRepository;
 
     @Override
-    protected void doFilterInternal(
-            @NonNull HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain) throws ServletException, IOException {
-
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
-        log.debug("JWT Filter - Path: {}, Auth Header: {}", request.getRequestURI(), 
-            authHeader != null ? "Bearer ***" : "null");
-
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            log.debug("No Bearer token, continuing filter chain");
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = authHeader.substring(7);
         try {
-            String email = jwtUtil.getEmail(token);
-            String role = jwtUtil.getRole(token);
-            log.debug("Token parsed - email: {}, role: {}", email, role);
-
+            String email = jwtUtil.getEmail(authHeader.substring(7));
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
-                var authToken = new UsernamePasswordAuthenticationToken(email, null, authorities);
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-                log.debug("Authentication set in SecurityContext");
+                var user = userRepository.findWithRolesByEmail(email)
+                        .filter(com.ticketnest.entity.User::isActive)
+                        .orElseThrow(() -> new IllegalArgumentException("User is missing or inactive"));
+                var authorities = user.getRoles().stream()
+                        .flatMap(role -> Stream.concat(
+                                Stream.of(new SimpleGrantedAuthority("ROLE_" + role.getName())),
+                                role.getPermissions().stream().map(permission -> new SimpleGrantedAuthority(permission.name()))))
+                        .distinct()
+                        .toList();
+                var authentication = new UsernamePasswordAuthenticationToken(email, null, authorities);
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authentication);
             }
-        } catch (Exception e) {
-            log.warn("JWT validation failed: {}", e.getMessage());
-            // Invalid/expired token → let filter chain continue (401 will be sent by AuthenticationEntryPoint)
+        } catch (Exception exception) {
+            log.warn("JWT authentication failed: {}", exception.getMessage());
         }
-
         filterChain.doFilter(request, response);
     }
 }

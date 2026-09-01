@@ -1,10 +1,11 @@
 package com.ticketnest.auth.dto;
 
-import com.ticketnest.entity.Role;
+import com.ticketnest.common.dto.RoleSummary;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.UUID;
+import java.util.List;
 
 /**
  * Registration output. Excludes password hash; returns user identity and default role.
@@ -18,5 +19,5 @@ public class RegisterResponse {
     private String firstName;
     private String lastName;
     private String phoneNumber;
-    private Role role;
+    private List<RoleSummary> roles;
 }
