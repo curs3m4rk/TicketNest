@@ -1,5 +1,7 @@
 package com.ticketnest.venue;
 
+import com.ticketnest.venue.dto.SeatBatchCreateRequest;
+import com.ticketnest.venue.dto.SeatBatchCreateResponse;
 import com.ticketnest.venue.dto.SeatResponse;
 import com.ticketnest.venue.dto.VenueRequest;
 import com.ticketnest.venue.dto.VenueResponse;
@@ -8,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -41,6 +44,16 @@ public class VenueController {
     @GetMapping("/{id}/seats")
     public List<SeatResponse> getSeats(@PathVariable UUID id) {
         return venueService.getSeats(id);
+    }
+
+    @PostMapping("/{id}/seats")
+    @PreAuthorize("hasAuthority('VENUE_MANAGE')")
+    public ResponseEntity<SeatBatchCreateResponse> createSeats(
+            @PathVariable UUID id,
+            @Valid @RequestBody SeatBatchCreateRequest request
+    ) {
+        SeatBatchCreateResponse response = venueService.createSeats(id, request);
+        return ResponseEntity.created(URI.create("/api/venues/" + id + "/seats")).body(response);
     }
 
     /** Creates a new venue. Returns 201 with created venue. */
