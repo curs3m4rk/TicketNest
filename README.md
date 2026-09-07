@@ -77,3 +77,24 @@ https://localhost:8443
 
 The Maven integration tests continue to use isolated PostgreSQL containers via
 Testcontainers and do not depend on the Compose database.
+
+## Running tests
+
+Run the unit tests without Spring, Docker, or a database:
+
+```shell
+bash mvnw test
+```
+
+The catalog (`ShowService`, `VenueService`, `ShowInventoryService`) and booking
+(`BookingService`, `BookingExpirationService`) unit tests use Mockito repository
+mocks to exercise business rules in isolation. Time-sensitive tests use fixed
+clocks. Mockito uses the subclass mock maker so repository and service mocks
+work without requiring Java agent attachment; final classes and static methods
+are not mocked.
+
+Run both unit and Testcontainers integration tests with Docker available:
+
+```shell
+bash mvnw verify
+```
