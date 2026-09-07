@@ -31,8 +31,8 @@ public class Seat {
     @JoinColumn(name = "venue_id", nullable = false)
     private Venue venue;
 
-    @OneToMany(mappedBy = "seat")
-    private List<BookingSeat> bookingSeats = new ArrayList<>();
+    @OneToMany(mappedBy = "sourceSeat")
+    private List<ShowSeat> showSeats = new ArrayList<>();
 
     @Column(name = "seat_row", nullable = false)
     private String row;

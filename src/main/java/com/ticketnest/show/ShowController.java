@@ -4,6 +4,9 @@ import com.ticketnest.common.dto.PageResponse;
 import com.ticketnest.show.dto.ShowRequest;
 import com.ticketnest.show.dto.ShowResponse;
 import com.ticketnest.show.dto.ShowFilter;
+import com.ticketnest.show.dto.ShowInventoryRequest;
+import com.ticketnest.show.dto.ShowInventoryResponse;
+import com.ticketnest.show.dto.ShowSeatResponse;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -11,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.UUID;
 
 /**
@@ -23,9 +27,11 @@ import java.util.UUID;
 public class ShowController {
 
     private final ShowService showService;
+    private final ShowInventoryService showInventoryService;
 
-    public ShowController(ShowService showService) {
+    public ShowController(ShowService showService, ShowInventoryService showInventoryService) {
         this.showService = showService;
+        this.showInventoryService = showInventoryService;
     }
 
     /**
@@ -46,6 +52,19 @@ public class ShowController {
     @GetMapping("/{id}")
     public ShowResponse getShow(@PathVariable UUID id) {
         return showService.getShow(id);
+    }
+
+    @PostMapping("/{id}/inventory")
+    @PreAuthorize("hasAuthority('SHOW_MANAGE')")
+    public ResponseEntity<ShowInventoryResponse> initializeInventory(
+            @PathVariable UUID id, @Valid @RequestBody ShowInventoryRequest request) {
+        ShowInventoryResponse response = showInventoryService.initialize(id, request);
+        return ResponseEntity.created(URI.create("/api/shows/" + id + "/seats")).body(response);
+    }
+
+    @GetMapping("/{id}/seats")
+    public java.util.List<ShowSeatResponse> getSeats(@PathVariable UUID id) {
+        return showInventoryService.getAvailability(id);
     }
 
     /** Creates a new show. Returns 201 with created show. */
