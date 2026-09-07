@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.UUID;
 @Entity
 @Table(
         name = "bookings",
+        uniqueConstraints = @UniqueConstraint(name = "uk_bookings_user_idempotency", columnNames = {"user_id", "idempotency_key"}),
         indexes = {
                 @Index(name = "idx_booking_user", columnList = "user_id"),
                 @Index(name = "idx_booking_show", columnList = "show_id")
@@ -39,8 +41,17 @@ public class Booking {
     @Column(nullable = false)
     private BookingStatus status;
 
-    @Column(name = "idempotency_key", nullable = false, unique = true)
+    @Column(name = "idempotency_key", nullable = false)
     private String idempotencyKey;
+
+    @Column(name = "expires_at", nullable = false)
+    private Instant expiresAt;
+
+    @Column(name = "total_amount", nullable = false, precision = 12, scale = 2)
+    private BigDecimal totalAmount;
+
+    @Column(nullable = false, length = 3)
+    private String currency;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -64,7 +75,9 @@ public class Booking {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = Instant.now();
+        if (createdAt == null) {
+            createdAt = Instant.now();
+        }
 
         if (status == null) {
             status = BookingStatus.HELD;
@@ -73,6 +86,8 @@ public class Booking {
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = Instant.now();
+        if (updatedAt == null) {
+            updatedAt = Instant.now();
+        }
     }
 }

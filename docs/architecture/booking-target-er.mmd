@@ -1,0 +1,140 @@
+---
+title: TicketNest Booking Holds Target Schema (Flyway V1-V4)
+---
+erDiagram
+    USERS {
+        UUID id PK
+        VARCHAR email UK
+        VARCHAR password_hash
+        VARCHAR first_name
+        VARCHAR last_name
+        VARCHAR phone_number UK "nullable"
+        BOOLEAN active
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at "nullable"
+    }
+    ROLES {
+        UUID id PK
+        VARCHAR name UK
+        VARCHAR description "nullable"
+        BOOLEAN system_role
+    }
+    ROLE_PERMISSIONS {
+        UUID role_id PK, FK
+        VARCHAR permission PK
+    }
+    USER_ROLES {
+        UUID user_id PK, FK
+        UUID role_id PK, FK
+    }
+    REFRESH_TOKENS {
+        UUID id PK
+        VARCHAR token_hash UK
+        UUID user_id FK
+        TIMESTAMPTZ expires_at
+        BOOLEAN revoked
+        TIMESTAMPTZ created_at
+    }
+    VENUES {
+        UUID id PK
+        VARCHAR name
+        VARCHAR city
+        VARCHAR address
+        BOOLEAN active
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at "nullable"
+    }
+    SHOWS {
+        UUID id PK
+        UUID venue_id FK
+        VARCHAR title
+        TIMESTAMPTZ start_time
+        VARCHAR genre
+        VARCHAR status
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at "nullable"
+    }
+    SEATS {
+        UUID id PK
+        UUID venue_id FK
+        VARCHAR seat_row
+        VARCHAR seat_number
+        VARCHAR tier
+        BIGINT version
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at "nullable"
+    }
+    SHOW_INVENTORIES {
+        UUID show_id PK, FK
+        VARCHAR currency
+        TIMESTAMPTZ created_at
+    }
+    SHOW_SEATS {
+        UUID id PK
+        UUID show_id FK
+        UUID source_seat_id FK
+        VARCHAR seat_row
+        VARCHAR seat_number
+        VARCHAR tier
+        NUMERIC price
+        VARCHAR status "AVAILABLE, HELD, BOOKED"
+        UUID allocated_booking_id FK "nullable"
+        TIMESTAMPTZ hold_expires_at "nullable"
+        BIGINT version
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at "nullable"
+    }
+    BOOKINGS {
+        UUID id PK
+        UUID user_id FK
+        UUID show_id FK
+        VARCHAR status "HELD, CONFIRMED, RELEASED, FAILED, EXPIRED"
+        VARCHAR idempotency_key "unique per user"
+        TIMESTAMPTZ expires_at
+        NUMERIC total_amount
+        VARCHAR currency
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at "nullable"
+    }
+    BOOKING_SEATS {
+        UUID id PK
+        UUID booking_id FK
+        UUID show_seat_id FK
+        NUMERIC unit_price
+        TIMESTAMPTZ created_at
+    }
+    PAYMENTS {
+        UUID id PK
+        UUID booking_id FK, UK
+        VARCHAR status
+        VARCHAR provider_ref "nullable"
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at "nullable"
+    }
+    NOTIFICATIONS {
+        UUID id PK
+        UUID user_id FK
+        VARCHAR type
+        TEXT payload
+        TIMESTAMPTZ sent_at "nullable"
+        TIMESTAMPTZ created_at
+    }
+
+    USERS ||--o{ USER_ROLES : assigned
+    ROLES ||--o{ USER_ROLES : contains
+    ROLES ||--o{ ROLE_PERMISSIONS : grants
+    USERS ||--o{ REFRESH_TOKENS : owns
+    USERS ||--o{ BOOKINGS : creates
+    USERS ||--o{ NOTIFICATIONS : receives
+    VENUES ||--o{ SHOWS : hosts
+    VENUES ||--o{ SEATS : defines
+    SHOWS ||--o| SHOW_INVENTORIES : snapshots
+    SHOW_INVENTORIES ||--|{ SHOW_SEATS : contains
+    SEATS ||--o{ SHOW_SEATS : source_for
+    SHOWS ||--o{ BOOKINGS : receives
+    BOOKINGS ||--o{ BOOKING_SEATS : includes
+    SHOW_SEATS ||--o{ BOOKING_SEATS : recorded_in
+    BOOKINGS o|--o{ SHOW_SEATS : currently_allocates
+    BOOKINGS ||--o| PAYMENTS : has
+
+%% VENUE_MANAGE and SHOW_MANAGE are authorization permissions, not ownership foreign keys.

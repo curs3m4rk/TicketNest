@@ -5,6 +5,8 @@ import com.ticketnest.entity.Show;
 import com.ticketnest.entity.Venue;
 import com.ticketnest.repository.ShowRepository;
 import com.ticketnest.repository.VenueRepository;
+import com.ticketnest.repository.ShowInventoryRepository;
+import com.ticketnest.common.ConflictException;
 import com.ticketnest.show.dto.ShowRequest;
 import com.ticketnest.show.dto.ShowResponse;
 import com.ticketnest.show.dto.ShowFilter;
@@ -27,10 +29,13 @@ public class ShowService {
 
     private final ShowRepository showRepository;
     private final VenueRepository venueRepository;
+    private final ShowInventoryRepository showInventoryRepository;
 
-    public ShowService(ShowRepository showRepository, VenueRepository venueRepository) {
+    public ShowService(ShowRepository showRepository, VenueRepository venueRepository,
+                       ShowInventoryRepository showInventoryRepository) {
         this.showRepository = showRepository;
         this.venueRepository = venueRepository;
+        this.showInventoryRepository = showInventoryRepository;
     }
 
     /** Returns all shows with venue and seat tiers (uses JOIN FETCH to avoid N+1). */
@@ -108,6 +113,10 @@ public class ShowService {
         Venue venue = venueRepository.findById(request.venueId())
                 .orElseThrow(() -> new EntityNotFoundException("Venue with id " + request.venueId() + " not found"));
 
+        if (!show.getVenue().getId().equals(venue.getId()) && showInventoryRepository.existsById(id)) {
+            throw new ConflictException("A show's venue cannot change after inventory initialization");
+        }
+
         show.setVenue(venue);
         show.setTitle(request.title());
         show.setGenre(request.genre());
@@ -126,6 +135,9 @@ public class ShowService {
     public void deleteShow(UUID id) {
         if (!showRepository.existsById(id)) {
             throw new EntityNotFoundException("Show with id " + id + " not found");
+        }
+        if (showInventoryRepository.existsById(id)) {
+            throw new ConflictException("A show with initialized inventory cannot be deleted");
         }
         showRepository.deleteById(id);
     }
