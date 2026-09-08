@@ -72,7 +72,7 @@ class VenueSeatCreationIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void createSeats_shouldExpandNormalizePersistAndReturnNaturalOrder() throws Exception {
-        mockMvc.perform(post("/api/venues/{id}/seats", venue.getId())
+        mockMvc.perform(post("/api/v1/venues/{id}/seats", venue.getId())
                         .header("Authorization", bearer(adminToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -84,7 +84,7 @@ class VenueSeatCreationIntegrationTest extends BaseIntegrationTest {
                                 }
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(header().string("Location", "/api/venues/" + venue.getId() + "/seats"))
+                .andExpect(header().string("Location", "/api/v1/venues/" + venue.getId() + "/seats"))
                 .andExpect(jsonPath("$.venueId").value(venue.getId().toString()))
                 .andExpect(jsonPath("$.createdCount").value(12));
 
@@ -98,7 +98,7 @@ class VenueSeatCreationIntegrationTest extends BaseIntegrationTest {
         assertTrue(seats.stream().allMatch(seat -> seat.getCreatedAt() != null));
         assertTrue(seats.stream().allMatch(seat -> seat.getVersion() != null));
 
-        mockMvc.perform(get("/api/venues/{id}/seats", venue.getId())
+        mockMvc.perform(get("/api/v1/venues/{id}/seats", venue.getId())
                         .header("Authorization", bearer(adminToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].row").value("A"))
@@ -113,7 +113,7 @@ class VenueSeatCreationIntegrationTest extends BaseIntegrationTest {
     void createSeats_duplicateExistingSeat_shouldReturnConflictAndRollbackBatch() throws Exception {
         createSeat("A", "2", "VIP");
 
-        mockMvc.perform(post("/api/venues/{id}/seats", venue.getId())
+        mockMvc.perform(post("/api/v1/venues/{id}/seats", venue.getId())
                         .header("Authorization", bearer(adminToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -141,7 +141,7 @@ class VenueSeatCreationIntegrationTest extends BaseIntegrationTest {
         );
 
         for (String request : invalidRequests) {
-            mockMvc.perform(post("/api/venues/{id}/seats", venue.getId())
+            mockMvc.perform(post("/api/v1/venues/{id}/seats", venue.getId())
                             .header("Authorization", bearer(adminToken))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(request))
@@ -157,18 +157,18 @@ class VenueSeatCreationIntegrationTest extends BaseIntegrationTest {
                 {"ranges":[{"row":"A","startNumber":1,"endNumber":1,"tier":"VIP"}]}
                 """;
 
-        mockMvc.perform(post("/api/venues/{id}/seats", venue.getId())
+        mockMvc.perform(post("/api/v1/venues/{id}/seats", venue.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isUnauthorized());
 
-        mockMvc.perform(post("/api/venues/{id}/seats", venue.getId())
+        mockMvc.perform(post("/api/v1/venues/{id}/seats", venue.getId())
                         .header("Authorization", bearer(userToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isForbidden());
 
-        mockMvc.perform(post("/api/venues/{id}/seats", UUID.randomUUID())
+        mockMvc.perform(post("/api/v1/venues/{id}/seats", UUID.randomUUID())
                         .header("Authorization", bearer(adminToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
@@ -192,7 +192,7 @@ class VenueSeatCreationIntegrationTest extends BaseIntegrationTest {
                 futures.add(executor.submit(() -> {
                     ready.countDown();
                     assertTrue(start.await(10, TimeUnit.SECONDS));
-                    return mockMvc.perform(post("/api/venues/{id}/seats", venue.getId())
+                    return mockMvc.perform(post("/api/v1/venues/{id}/seats", venue.getId())
                                     .header("Authorization", bearer(adminToken))
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(payload))

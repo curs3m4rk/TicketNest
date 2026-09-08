@@ -19,7 +19,7 @@ class PhoneRegistrationIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void register_duplicatePhoneNumber_shouldRejectSecondUser() throws Exception {
-        mockMvc.perform(post("/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -32,7 +32,7 @@ class PhoneRegistrationIntegrationTest extends BaseIntegrationTest {
                                 """))
                 .andExpect(status().isCreated());
 
-        mockMvc.perform(post("/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -48,7 +48,7 @@ class PhoneRegistrationIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void register_differentPhoneNumbers_shouldCreateBothUsers() throws Exception {
-        mockMvc.perform(post("/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -61,7 +61,7 @@ class PhoneRegistrationIntegrationTest extends BaseIntegrationTest {
                                 """))
                 .andExpect(status().isCreated());
 
-        mockMvc.perform(post("/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -77,7 +77,7 @@ class PhoneRegistrationIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void register_missingPhoneNumber_shouldReturnFieldValidationError() throws Exception {
-        mockMvc.perform(post("/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -112,7 +112,7 @@ class PhoneRegistrationIntegrationTest extends BaseIntegrationTest {
     }
 
     private void assertInvalidPhone(String email, String phoneNumber, String expectedMessage) throws Exception {
-        mockMvc.perform(post("/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {

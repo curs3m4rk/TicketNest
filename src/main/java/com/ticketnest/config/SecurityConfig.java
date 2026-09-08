@@ -29,8 +29,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter,
                                                    ObjectMapper objectMapper) throws Exception {
         http.authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/auth/logout").authenticated()
-                    .requestMatchers("/auth/**").permitAll()
+                    .requestMatchers(ApiPaths.AUTH_V1 + "/logout").authenticated()
+                    .requestMatchers(ApiPaths.AUTH_V1 + "/**").permitAll()
                     .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                     .requestMatchers("/swagger", "/swagger/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                     .anyRequest().authenticated())

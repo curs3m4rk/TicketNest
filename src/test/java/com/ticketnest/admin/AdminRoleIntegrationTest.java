@@ -52,7 +52,7 @@ class AdminRoleIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void userCannotAccessRoleAdministration() throws Exception {
-        mockMvc.perform(get("/api/admin/roles").header("Authorization", "Bearer " + userToken))
+        mockMvc.perform(get("/api/v1/admin/roles").header("Authorization", "Bearer " + userToken))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error").value("Forbidden"));
     }
@@ -60,7 +60,7 @@ class AdminRoleIntegrationTest extends BaseIntegrationTest {
     @Test
     void adminCanCreateAssignAndManageCustomRole() throws Exception {
         String roleName = "EVENT_MANAGER_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
-        String created = mockMvc.perform(post("/api/admin/roles")
+        String created = mockMvc.perform(post("/api/v1/admin/roles")
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -71,7 +71,7 @@ class AdminRoleIntegrationTest extends BaseIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         UUID roleId = UUID.fromString(JsonPath.read(created, "$.id"));
 
-        mockMvc.perform(put("/api/admin/users/{id}/roles", user.getId())
+        mockMvc.perform(put("/api/v1/admin/users/{id}/roles", user.getId())
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -81,11 +81,11 @@ class AdminRoleIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.roles.length()").value(2))
                 .andExpect(jsonPath("$.roles[*].name", hasItem(roleName)));
 
-        mockMvc.perform(delete("/api/admin/roles/{id}", roleId)
+        mockMvc.perform(delete("/api/v1/admin/roles/{id}", roleId)
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isConflict());
 
-        mockMvc.perform(put("/api/admin/roles/{id}", userRole.getId())
+        mockMvc.perform(put("/api/v1/admin/roles/{id}", userRole.getId())
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -97,7 +97,7 @@ class AdminRoleIntegrationTest extends BaseIntegrationTest {
     @Test
     void lastActiveAdminCannotLoseAdminRole() throws Exception {
         var admin = userRepository.findWithRolesByEmail(jwtUtil.getEmail(adminToken)).orElseThrow();
-        mockMvc.perform(put("/api/admin/users/{id}/roles", admin.getId())
+        mockMvc.perform(put("/api/v1/admin/users/{id}/roles", admin.getId())
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"roleIds\":[\"" + userRole.getId() + "\"]}"))
@@ -107,7 +107,7 @@ class AdminRoleIntegrationTest extends BaseIntegrationTest {
     @Test
     void permissionChangesApplyImmediatelyToExistingToken() throws Exception {
         String roleName = "VENUE_MANAGER_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
-        String created = mockMvc.perform(post("/api/admin/roles")
+        String created = mockMvc.perform(post("/api/v1/admin/roles")
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -117,7 +117,7 @@ class AdminRoleIntegrationTest extends BaseIntegrationTest {
         UUID roleId = UUID.fromString(JsonPath.read(created, "$.id"));
 
         replaceUserRoles(userRole.getId(), roleId);
-        mockMvc.perform(post("/api/venues")
+        mockMvc.perform(post("/api/v1/venues")
                         .header("Authorization", "Bearer " + userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -126,7 +126,7 @@ class AdminRoleIntegrationTest extends BaseIntegrationTest {
                 .andExpect(status().isCreated());
 
         replaceUserRoles(userRole.getId());
-        mockMvc.perform(post("/api/venues")
+        mockMvc.perform(post("/api/v1/venues")
                         .header("Authorization", "Bearer " + userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -138,7 +138,7 @@ class AdminRoleIntegrationTest extends BaseIntegrationTest {
     private void replaceUserRoles(UUID... ids) throws Exception {
         String roleIds = java.util.Arrays.stream(ids).map(id -> "\"" + id + "\"")
                 .collect(java.util.stream.Collectors.joining(","));
-        mockMvc.perform(put("/api/admin/users/{id}/roles", user.getId())
+        mockMvc.perform(put("/api/v1/admin/users/{id}/roles", user.getId())
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"roleIds\":[" + roleIds + "]}"))

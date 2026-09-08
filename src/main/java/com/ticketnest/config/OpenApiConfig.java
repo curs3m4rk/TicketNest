@@ -19,13 +19,13 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("TicketNest API")
                         .version("v1")
-                        .description("Live-event ticket booking platform API"))
+                        .description("Live-event ticket booking platform API. Public application endpoints use URI versioning under /api/v1."))
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                 .components(new Components()
                         .addSecuritySchemes("bearerAuth", new SecurityScheme()
                                 .type(SecurityScheme.Type.HTTP)
                                 .scheme("bearer")
                                 .bearerFormat("JWT")
-                                .description("Enter JWT token obtained from /auth/login")));
+                                .description("Enter JWT token obtained from /api/v1/auth/login")));
     }
 }

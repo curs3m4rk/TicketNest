@@ -55,14 +55,14 @@ class VenueSeatIntegrationTest extends BaseIntegrationTest {
 
         String email = "seats-" + UUID.randomUUID() + "@example.com";
         String phoneNumber = "+1" + PHONE_COUNTER.getAndIncrement();
-        mockMvc.perform(post("/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"email":"%s","password":"Password123","firstName":"Seat","lastName":"Tester","phoneNumber":"%s"}
                                 """.formatted(email, phoneNumber)))
                 .andExpect(status().isCreated());
 
-        MvcResult login = mockMvc.perform(post("/auth/login")
+        MvcResult login = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"email":"%s","password":"Password123"}
@@ -85,7 +85,7 @@ class VenueSeatIntegrationTest extends BaseIntegrationTest {
         otherVenue.setCreatedAt(Instant.now());
         createSeat(venueRepository.save(otherVenue), "A", "1", "STANDARD");
 
-        mockMvc.perform(get("/api/venues/{id}/seats", venue.getId())
+        mockMvc.perform(get("/api/v1/venues/{id}/seats", venue.getId())
                         .header("Authorization", "Bearer " + jwtToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(3))
@@ -98,7 +98,7 @@ class VenueSeatIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void getSeats_existingVenueWithoutSeats_shouldReturnEmptyList() throws Exception {
-        mockMvc.perform(get("/api/venues/{id}/seats", venue.getId())
+        mockMvc.perform(get("/api/v1/venues/{id}/seats", venue.getId())
                         .header("Authorization", "Bearer " + jwtToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
@@ -106,14 +106,14 @@ class VenueSeatIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void getSeats_missingVenue_shouldReturn404() throws Exception {
-        mockMvc.perform(get("/api/venues/{id}/seats", UUID.randomUUID())
+        mockMvc.perform(get("/api/v1/venues/{id}/seats", UUID.randomUUID())
                         .header("Authorization", "Bearer " + jwtToken))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void getSeats_withoutJwt_shouldReturn401() throws Exception {
-        mockMvc.perform(get("/api/venues/{id}/seats", venue.getId()))
+        mockMvc.perform(get("/api/v1/venues/{id}/seats", venue.getId()))
                 .andExpect(status().isUnauthorized());
     }
 

@@ -60,7 +60,7 @@ class ValidationIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void register_invalidFields_shouldReturnMessagesByField() throws Exception {
-        mockMvc.perform(post("/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"email":"invalid","password":"short","firstName":"","lastName":"X","phoneNumber":"invalid"}
@@ -76,7 +76,7 @@ class ValidationIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void createVenue_invalidFields_shouldReturnMessagesByField() throws Exception {
-        mockMvc.perform(post("/api/venues")
+        mockMvc.perform(post("/api/v1/venues")
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -90,7 +90,7 @@ class ValidationIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void createShow_invalidFields_shouldReturnMessagesByField() throws Exception {
-        mockMvc.perform(post("/api/shows")
+        mockMvc.perform(post("/api/v1/shows")
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -106,7 +106,7 @@ class ValidationIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void refresh_blankToken_shouldReturnFieldMessage() throws Exception {
-        mockMvc.perform(post("/auth/refresh")
+        mockMvc.perform(post("/api/v1/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"refreshToken":""}
@@ -117,7 +117,7 @@ class ValidationIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void showFilter_tooLong_shouldReturnFieldMessage() throws Exception {
-        mockMvc.perform(get("/api/shows")
+        mockMvc.perform(get("/api/v1/shows")
                         .param("city", "C".repeat(101))
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isBadRequest())

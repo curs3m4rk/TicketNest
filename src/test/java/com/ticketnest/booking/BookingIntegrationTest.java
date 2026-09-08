@@ -118,13 +118,13 @@ class BookingIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void inventoryInitialization_shouldAuthorizeValidateNormalizeAndSnapshot() throws Exception {
-        mockMvc.perform(post("/api/shows/{id}/inventory", show.getId())
+        mockMvc.perform(post("/api/v1/shows/{id}/inventory", show.getId())
                         .header("Authorization", bearer(firstUserToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(inventoryPayload()))
                 .andExpect(status().isForbidden());
 
-        mockMvc.perform(post("/api/shows/{id}/inventory", show.getId())
+        mockMvc.perform(post("/api/v1/shows/{id}/inventory", show.getId())
                         .header("Authorization", bearer(adminToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -132,17 +132,17 @@ class BookingIntegrationTest extends BaseIntegrationTest {
                                 """))
                 .andExpect(status().isBadRequest());
 
-        mockMvc.perform(post("/api/shows/{id}/inventory", show.getId())
+        mockMvc.perform(post("/api/v1/shows/{id}/inventory", show.getId())
                         .header("Authorization", bearer(adminToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(inventoryPayload()))
                 .andExpect(status().isCreated())
-                .andExpect(header().string("Location", "/api/shows/" + show.getId() + "/seats"))
+                .andExpect(header().string("Location", "/api/v1/shows/" + show.getId() + "/seats"))
                 .andExpect(jsonPath("$.currency").value("INR"))
                 .andExpect(jsonPath("$.seatCount").value(3));
 
         createSeat(show.getVenue(), "B", "1", "STANDARD");
-        mockMvc.perform(get("/api/shows/{id}/seats", show.getId())
+        mockMvc.perform(get("/api/v1/shows/{id}/seats", show.getId())
                         .header("Authorization", bearer(firstUserToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(3))
@@ -152,7 +152,7 @@ class BookingIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$[0].price").value(1000.00))
                 .andExpect(jsonPath("$[1].price").value(500.00));
 
-        mockMvc.perform(post("/api/shows/{id}/inventory", show.getId())
+        mockMvc.perform(post("/api/v1/shows/{id}/inventory", show.getId())
                         .header("Authorization", bearer(adminToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(inventoryPayload()))
@@ -165,12 +165,13 @@ class BookingIntegrationTest extends BaseIntegrationTest {
         List<UUID> seats = showSeatIds();
         String request = bookingPayload(seats.subList(0, 2));
 
-        String created = mockMvc.perform(post("/api/bookings")
+        String created = mockMvc.perform(post("/api/v1/bookings")
                         .header("Authorization", bearer(firstUserToken))
                         .header("Idempotency-Key", "checkout-1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(request))
                 .andExpect(status().isCreated())
+                .andExpect(header().string("Location", org.hamcrest.Matchers.startsWith("/api/v1/bookings/")))
                 .andExpect(jsonPath("$.status").value("HELD"))
                 .andExpect(jsonPath("$.totalAmount").value(1500.00))
                 .andExpect(jsonPath("$.currency").value("INR"))
@@ -178,36 +179,36 @@ class BookingIntegrationTest extends BaseIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         UUID bookingId = UUID.fromString(JsonPath.read(created, "$.id"));
 
-        mockMvc.perform(post("/api/bookings")
+        mockMvc.perform(post("/api/v1/bookings")
                         .header("Authorization", bearer(firstUserToken))
                         .header("Idempotency-Key", "checkout-1")
                         .contentType(MediaType.APPLICATION_JSON).content(request))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(bookingId.toString()));
 
-        mockMvc.perform(post("/api/bookings")
+        mockMvc.perform(post("/api/v1/bookings")
                         .header("Authorization", bearer(firstUserToken))
                         .header("Idempotency-Key", "checkout-1")
                         .contentType(MediaType.APPLICATION_JSON).content(bookingPayload(List.of(seats.get(2)))))
                 .andExpect(status().isConflict());
 
-        mockMvc.perform(get("/api/bookings").header("Authorization", bearer(firstUserToken)))
+        mockMvc.perform(get("/api/v1/bookings").header("Authorization", bearer(firstUserToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.content[0].id").value(bookingId.toString()));
 
-        mockMvc.perform(get("/api/bookings/{id}", bookingId)
+        mockMvc.perform(get("/api/v1/bookings/{id}", bookingId)
                         .header("Authorization", bearer(secondUserToken)))
                 .andExpect(status().isNotFound());
 
-        mockMvc.perform(post("/api/bookings/{id}/cancel", bookingId)
+        mockMvc.perform(post("/api/v1/bookings/{id}/cancel", bookingId)
                         .header("Authorization", bearer(firstUserToken)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("RELEASED"));
-        mockMvc.perform(post("/api/bookings/{id}/cancel", bookingId)
+        mockMvc.perform(post("/api/v1/bookings/{id}/cancel", bookingId)
                         .header("Authorization", bearer(firstUserToken)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("RELEASED"));
 
-        mockMvc.perform(get("/api/shows/{id}/seats", show.getId())
+        mockMvc.perform(get("/api/v1/shows/{id}/seats", show.getId())
                         .header("Authorization", bearer(firstUserToken)))
                 .andExpect(jsonPath("$[0].availability").value("AVAILABLE"))
                 .andExpect(jsonPath("$[1].availability").value("AVAILABLE"));
@@ -221,11 +222,11 @@ class BookingIntegrationTest extends BaseIntegrationTest {
         UUID bookingId = UUID.fromString(JsonPath.read(created, "$.id"));
 
         clock.set(TEST_NOW.plus(Duration.ofMinutes(11)));
-        mockMvc.perform(get("/api/shows/{id}/seats", show.getId())
+        mockMvc.perform(get("/api/v1/shows/{id}/seats", show.getId())
                         .header("Authorization", bearer(secondUserToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].availability").value("AVAILABLE"));
-        mockMvc.perform(get("/api/bookings/{id}", bookingId)
+        mockMvc.perform(get("/api/v1/bookings/{id}", bookingId)
                         .header("Authorization", bearer(firstUserToken)))
                 .andExpect(jsonPath("$.status").value("EXPIRED"));
 
@@ -273,13 +274,13 @@ class BookingIntegrationTest extends BaseIntegrationTest {
     void bookingValidation_shouldRejectMissingKeyDuplicatesAndTooManySeats() throws Exception {
         initializeInventory();
         UUID seatId = showSeatIds().getFirst();
-        mockMvc.perform(post("/api/bookings")
+        mockMvc.perform(post("/api/v1/bookings")
                         .header("Authorization", bearer(firstUserToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bookingPayload(List.of(seatId))))
                 .andExpect(status().isBadRequest());
 
-        mockMvc.perform(post("/api/bookings")
+        mockMvc.perform(post("/api/v1/bookings")
                         .header("Authorization", bearer(firstUserToken))
                         .header("Idempotency-Key", "duplicates")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -289,7 +290,7 @@ class BookingIntegrationTest extends BaseIntegrationTest {
         String elevenIds = java.util.stream.IntStream.range(0, 11)
                 .mapToObj(ignored -> "\"" + UUID.randomUUID() + "\"")
                 .collect(java.util.stream.Collectors.joining(","));
-        mockMvc.perform(post("/api/bookings")
+        mockMvc.perform(post("/api/v1/bookings")
                         .header("Authorization", bearer(firstUserToken))
                         .header("Idempotency-Key", "too-many")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -299,14 +300,14 @@ class BookingIntegrationTest extends BaseIntegrationTest {
     }
 
     private void initializeInventory() throws Exception {
-        mockMvc.perform(post("/api/shows/{id}/inventory", show.getId())
+        mockMvc.perform(post("/api/v1/shows/{id}/inventory", show.getId())
                         .header("Authorization", bearer(adminToken))
                         .contentType(MediaType.APPLICATION_JSON).content(inventoryPayload()))
                 .andExpect(status().isCreated());
     }
 
     private List<UUID> showSeatIds() throws Exception {
-        String json = mockMvc.perform(get("/api/shows/{id}/seats", show.getId())
+        String json = mockMvc.perform(get("/api/v1/shows/{id}/seats", show.getId())
                         .header("Authorization", bearer(firstUserToken)))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         List<String> ids = JsonPath.read(json, "$[*].id");
@@ -314,7 +315,7 @@ class BookingIntegrationTest extends BaseIntegrationTest {
     }
 
     private String createBooking(String token, String key, List<UUID> seatIds, int expectedStatus) throws Exception {
-        return mockMvc.perform(post("/api/bookings")
+        return mockMvc.perform(post("/api/v1/bookings")
                         .header("Authorization", bearer(token)).header("Idempotency-Key", key)
                         .contentType(MediaType.APPLICATION_JSON).content(bookingPayload(seatIds)))
                 .andExpect(status().is(expectedStatus)).andReturn().getResponse().getContentAsString();
@@ -330,7 +331,7 @@ class BookingIntegrationTest extends BaseIntegrationTest {
                 futures.add(executor.submit(() -> {
                     ready.countDown();
                     assertTrue(start.await(10, TimeUnit.SECONDS));
-                    return mockMvc.perform(post("/api/bookings")
+                    return mockMvc.perform(post("/api/v1/bookings")
                                     .header("Authorization", bearer(attempt.token()))
                                     .header("Idempotency-Key", attempt.key())
                                     .contentType(MediaType.APPLICATION_JSON)
