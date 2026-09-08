@@ -42,7 +42,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                 """;
 
         mockMvc.perform(
-                        post("/auth/register")
+                        post("/api/v1/auth/register")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(request)
                 )
@@ -73,7 +73,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                 """;
 
         mockMvc.perform(
-                        post("/auth/register")
+                        post("/api/v1/auth/register")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(registerRequest)
                 )
@@ -88,7 +88,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                 """;
 
         mockMvc.perform(
-                        post("/auth/login")
+                        post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(loginRequest)
                 )
@@ -114,7 +114,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
 
         // First registration succeeds
         mockMvc.perform(
-                        post("/auth/register")
+                        post("/api/v1/auth/register")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(request)
                 )
@@ -122,7 +122,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
 
         // Second registration with same email should fail
         mockMvc.perform(
-                        post("/auth/register")
+                        post("/api/v1/auth/register")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(request)
                 )
@@ -142,7 +142,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                 """;
 
         mockMvc.perform(
-                        post("/auth/register")
+                        post("/api/v1/auth/register")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(registerRequest)
                 )
@@ -156,7 +156,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                 """;
 
         mockMvc.perform(
-                        post("/auth/login")
+                        post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(loginRequest)
                 )
@@ -166,7 +166,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
     @Test
     void getShows_withoutJwt_shouldReturn401() throws Exception {
         mockMvc.perform(
-                        get("/api/shows")
+                        get("/api/v1/shows")
                                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().exists("X-Request-ID"));
@@ -186,7 +186,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                 """;
 
         mockMvc.perform(
-                        post("/auth/register")
+                        post("/api/v1/auth/register")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(registerRequest)
                 )
@@ -200,7 +200,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                 """;
 
         String token = mockMvc.perform(
-                        post("/auth/login")
+                        post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(loginRequest)
                 )
@@ -214,7 +214,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
 
         // Access protected endpoint with valid JWT
         mockMvc.perform(
-                        get("/api/shows")
+                        get("/api/v1/shows")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .header("Authorization", "Bearer " + jwtToken)
                 )
@@ -249,7 +249,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                 """;
 
         mockMvc.perform(
-                        post("/auth/register")
+                        post("/api/v1/auth/register")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(registerRequest)
                 )
@@ -263,7 +263,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                 """;
 
         String loginResponse = mockMvc.perform(
-                        post("/auth/login")
+                        post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(loginRequest)
                 )
@@ -282,7 +282,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                 """.formatted(refreshToken);
 
         mockMvc.perform(
-                        post("/auth/refresh")
+                        post("/api/v1/auth/refresh")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(refreshRequest)
                 )
@@ -312,7 +312,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                 """;
 
         mockMvc.perform(
-                        post("/auth/register")
+                        post("/api/v1/auth/register")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(registerRequest)
                 )
@@ -326,7 +326,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                 """;
 
         String loginResponse = mockMvc.perform(
-                        post("/auth/login")
+                        post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(loginRequest)
                 )
@@ -345,7 +345,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                 """.formatted(firstRefreshToken);
 
         mockMvc.perform(
-                        post("/auth/refresh")
+                        post("/api/v1/auth/refresh")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(refreshRequest1)
                 )
@@ -359,7 +359,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                 """.formatted(firstRefreshToken);
 
         mockMvc.perform(
-                        post("/auth/refresh")
+                        post("/api/v1/auth/refresh")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(refreshRequest2)
                 )
@@ -380,7 +380,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                 """;
 
         mockMvc.perform(
-                        post("/auth/register")
+                        post("/api/v1/auth/register")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(registerRequest)
                 )
@@ -394,7 +394,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                 """;
 
         String loginResponse = mockMvc.perform(
-                        post("/auth/login")
+                        post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(loginRequest)
                 )
@@ -413,7 +413,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
                 """;
 
         mockMvc.perform(
-                        post("/auth/logout")
+                        post("/api/v1/auth/logout")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(logoutRequest)
                                 .header("Authorization", "Bearer " + accessToken)
@@ -422,7 +422,7 @@ class AuthIntegrationTest extends BaseIntegrationTest {
 
         // The old refresh token should now be revoked, reuse should fail
 mockMvc.perform(
-                        post("/auth/refresh")
+                        post("/api/v1/auth/refresh")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("""
                                      {
@@ -446,7 +446,7 @@ mockMvc.perform(
                 """;
 
         mockMvc.perform(
-                        post("/auth/register")
+                        post("/api/v1/auth/register")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(request)
                 )
@@ -466,7 +466,7 @@ mockMvc.perform(
                 """;
 
         mockMvc.perform(
-                        post("/auth/register")
+                        post("/api/v1/auth/register")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(request)
                 )
@@ -482,7 +482,7 @@ mockMvc.perform(
                 """;
 
         mockMvc.perform(
-                        post("/auth/login")
+                        post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(request)
                 )

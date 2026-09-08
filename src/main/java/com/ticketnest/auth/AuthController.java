@@ -1,5 +1,6 @@
 package com.ticketnest.auth;
 
+import com.ticketnest.config.ApiPaths;
 import com.ticketnest.auth.dto.LoginRequest;
 import com.ticketnest.auth.dto.LoginResponse;
 import com.ticketnest.auth.dto.LogoutRequest;
@@ -10,6 +11,7 @@ import com.ticketnest.auth.dto.TokenResponse;
 import com.ticketnest.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,7 +23,7 @@ import java.util.UUID;
  * Public authentication endpoints. No security (permitted by SecurityFilterChain).
  */
 @RestController
-@RequestMapping("/auth")
+@RequestMapping(ApiPaths.AUTH_V1)
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -29,12 +31,14 @@ public class AuthController {
     private final UserRepository userRepository;
 
     @PostMapping("/register")
+    @SecurityRequirements
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
         RegisterResponse response = authService.register(request);
         return ResponseEntity.status(201).body(response);
     }
 
     @PostMapping("/login")
+    @SecurityRequirements
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         try {
             LoginResponse response = authService.login(request);
@@ -45,6 +49,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
+    @SecurityRequirements
     public ResponseEntity<TokenResponse> refresh(@Valid @RequestBody RefreshRequest request) {
         try {
             TokenResponse response = authService.refresh(request.getRefreshToken());

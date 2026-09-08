@@ -1,5 +1,6 @@
 package com.ticketnest.venue;
 
+import com.ticketnest.config.ApiPaths;
 import com.ticketnest.venue.dto.SeatBatchCreateRequest;
 import com.ticketnest.venue.dto.SeatBatchCreateResponse;
 import com.ticketnest.venue.dto.SeatResponse;
@@ -16,11 +17,11 @@ import java.util.UUID;
 
 /**
  * REST controller for Venue CRUD.
- * Endpoints: GET/POST /api/venues, GET/PUT/DELETE /api/venues/{id}
+ * Endpoints: GET/POST /api/v1/venues, GET/PUT/DELETE /api/v1/venues/{id}
  * Returns VenueResponse with seat tiers for catalog display.
  */
 @RestController
-@RequestMapping("/api/venues")
+@RequestMapping(ApiPaths.V1 + "/venues")
 public class VenueController {
 
     private final VenueService venueService;
@@ -53,7 +54,7 @@ public class VenueController {
             @Valid @RequestBody SeatBatchCreateRequest request
     ) {
         SeatBatchCreateResponse response = venueService.createSeats(id, request);
-        return ResponseEntity.created(URI.create("/api/venues/" + id + "/seats")).body(response);
+        return ResponseEntity.created(URI.create(ApiPaths.V1 + "/venues/" + id + "/seats")).body(response);
     }
 
     /** Creates a new venue. Returns 201 with created venue. */

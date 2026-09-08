@@ -1,6 +1,7 @@
 package com.ticketnest.show;
 
 import com.ticketnest.common.dto.PageResponse;
+import com.ticketnest.config.ApiPaths;
 import com.ticketnest.show.dto.ShowRequest;
 import com.ticketnest.show.dto.ShowResponse;
 import com.ticketnest.show.dto.ShowFilter;
@@ -19,11 +20,11 @@ import java.util.UUID;
 
 /**
  * REST controller for Show CRUD.
- * Endpoints: GET/POST /api/shows, GET/PUT/DELETE /api/shows/{id}
+ * Endpoints: GET/POST /api/v1/shows, GET/PUT/DELETE /api/v1/shows/{id}
  * Returns ShowResponse with venue summary and seat tiers for catalog display.
  */
 @RestController
-@RequestMapping("/api/shows")
+@RequestMapping(ApiPaths.V1 + "/shows")
 public class ShowController {
 
     private final ShowService showService;
@@ -59,7 +60,7 @@ public class ShowController {
     public ResponseEntity<ShowInventoryResponse> initializeInventory(
             @PathVariable UUID id, @Valid @RequestBody ShowInventoryRequest request) {
         ShowInventoryResponse response = showInventoryService.initialize(id, request);
-        return ResponseEntity.created(URI.create("/api/shows/" + id + "/seats")).body(response);
+        return ResponseEntity.created(URI.create(ApiPaths.V1 + "/shows/" + id + "/seats")).body(response);
     }
 
     @GetMapping("/{id}/seats")

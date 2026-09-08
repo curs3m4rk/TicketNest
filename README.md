@@ -34,10 +34,14 @@ docker compose up --build
 
 The services are available at:
 
-* API: `http://localhost:8080`
+* API v1: `http://localhost:8080/api/v1`
 * Swagger UI: `http://localhost:8080/swagger`
 * Health: `http://localhost:8080/actuator/health`
 * PostgreSQL: `localhost:5432`
+
+Application endpoints use URI-based major versions. See the
+[API versioning decision](docs/architecture/api-versioning.md) for the route
+policy, tradeoffs, and migration from the original unversioned URLs.
 
 Compose includes development defaults, so an `.env` file is not required. To
 override the database credentials or JWT secret, copy `.env.example` to `.env`

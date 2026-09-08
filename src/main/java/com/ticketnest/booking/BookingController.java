@@ -3,6 +3,7 @@ package com.ticketnest.booking;
 import com.ticketnest.booking.dto.BookingCreateRequest;
 import com.ticketnest.booking.dto.BookingResponse;
 import com.ticketnest.common.dto.PageResponse;
+import com.ticketnest.config.ApiPaths;
 import com.ticketnest.entity.BookingStatus;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
@@ -15,7 +16,7 @@ import java.net.URI;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/bookings")
+@RequestMapping(ApiPaths.V1 + "/bookings")
 public class BookingController {
     private final BookingService bookingService;
 
@@ -31,7 +32,7 @@ public class BookingController {
         if (!result.created()) {
             return ResponseEntity.ok(result.response());
         }
-        return ResponseEntity.created(URI.create("/api/bookings/" + result.response().id())).body(result.response());
+        return ResponseEntity.created(URI.create(ApiPaths.V1 + "/bookings/" + result.response().id())).body(result.response());
     }
 
     @GetMapping("/{id}")

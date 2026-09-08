@@ -26,7 +26,7 @@ class CorrelationIdFilterTest {
 
     @Test
     void missingRequestId_generatesUuidAndMakesItAvailableDuringRequest() throws Exception {
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/shows");
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/shows");
         MockHttpServletResponse response = new MockHttpServletResponse();
         AtomicReference<String> requestIdDuringChain = new AtomicReference<>();
 
@@ -42,7 +42,7 @@ class CorrelationIdFilterTest {
 
     @Test
     void validRequestId_isReused() throws Exception {
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/shows");
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/shows");
         request.addHeader(CorrelationIdFilter.REQUEST_ID_HEADER, "gateway-request_123.abc");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -57,7 +57,7 @@ class CorrelationIdFilterTest {
 
     @Test
     void unsafeRequestId_isReplaced() throws Exception {
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/shows");
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/shows");
         request.addHeader(CorrelationIdFilter.REQUEST_ID_HEADER, "unsafe request id\nvalue");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -70,7 +70,7 @@ class CorrelationIdFilterTest {
 
     @Test
     void downstreamFailure_stillClearsMdc() {
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/shows");
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/shows");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         assertThrows(ServletException.class, () ->

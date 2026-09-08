@@ -1,5 +1,6 @@
 package com.ticketnest.admin;
 
+import com.ticketnest.config.ApiPaths;
 import com.ticketnest.admin.dto.AdminUserResponse;
 import com.ticketnest.admin.dto.RoleAssignmentRequest;
 import com.ticketnest.admin.dto.RoleRequest;
@@ -19,7 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping(ApiPaths.V1 + "/admin")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminRoleController {
