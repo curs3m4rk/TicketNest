@@ -39,6 +39,35 @@ The services are available at:
 * Health: `http://localhost:8080/actuator/health`
 * PostgreSQL: `localhost:5432`
 
+### Run the web UI locally
+
+The Lovable/TanStack UI lives in the separate `Ticketnest-UI` repository and
+targets the Docker API at `http://localhost:8080` by default. With both
+repositories cloned as sibling folders, run this in a second terminal:
+
+```shell
+cd ../Ticketnest-UI
+npm install
+npm run dev
+```
+
+Open the local URL printed by Vite, register or sign in, and use the API
+settings button in the header if the backend is running at a different address.
+All application API routes require authentication except registration, login,
+and token refresh, so catalog data appears after sign-in.
+
+For the direct Maven HTTPS backend, create `../Ticketnest-UI/.env.local`
+containing:
+
+```text
+VITE_API_BASE_URL=https://localhost:8443
+```
+
+The frontend is wired to authentication/refresh/logout, venues and venue seats,
+shows and priced show inventory, held bookings and cancellation, and the admin
+role/user APIs. Payment, saved payment methods, and profile updates remain UI-only
+placeholders because the backend does not expose those endpoints yet.
+
 Application endpoints use URI-based major versions. See the
 [API versioning decision](docs/architecture/api-versioning.md) for the route
 policy, tradeoffs, and migration from the original unversioned URLs.
@@ -76,7 +105,7 @@ IntelliJ IDEA or Maven with the `local` profile. Direct local runs retain the
 HTTPS development default:
 
 ```shell
-./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+bash mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
 ```text

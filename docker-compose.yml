@@ -30,6 +30,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-ticketnest-local-development-jwt-secret-change-before-production}
       SERVER_PORT: 8080
       SERVER_SSL_ENABLED: "false"
+      CORS_ALLOWED_ORIGIN_PATTERNS: ${CORS_ALLOWED_ORIGIN_PATTERNS:-http://localhost:*,https://localhost:*,http://127.0.0.1:*,https://127.0.0.1:*}
     ports:
       - "${TICKETNEST_APP_PORT:-8080}:8080"
     depends_on:
