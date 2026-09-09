@@ -56,3 +56,11 @@ app:
     hold-duration: PT10M
     cleanup-interval: PT1M
     cleanup-batch-size: 100
+  rate-limit:
+    login:
+      capacity: 5
+      refill-period: PT1M
+    booking-create:
+      capacity: 10
+      refill-period: PT1M
+    cleanup-interval: PT1M

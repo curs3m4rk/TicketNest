@@ -9,6 +9,14 @@ spring:
 app:
   jwt:
     secret: ticketnest-integration-test-jwt-secret-at-least-32-bytes-long
+  rate-limit:
+    login:
+      capacity: 10000
+      refill-period: PT1M
+    booking-create:
+      capacity: 10000
+      refill-period: PT1M
+    cleanup-interval: PT1M
 
 logging:
   level:
