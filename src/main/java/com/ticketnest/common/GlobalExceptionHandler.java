@@ -2,10 +2,12 @@ package com.ticketnest.common;
 
 import com.ticketnest.common.dto.ErrorResponse;
 import com.ticketnest.common.ConflictException;
+import com.ticketnest.common.ratelimit.RateLimitExceededException;
 import org.springframework.dao.DataIntegrityViolationException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -27,6 +29,22 @@ import java.util.stream.Collectors;
  */
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimit(
+            RateLimitExceededException ex,
+            jakarta.servlet.http.HttpServletRequest request
+    ) {
+        ErrorResponse body = ErrorResponse.of(
+                HttpStatus.TOO_MANY_REQUESTS.value(),
+                "Too Many Requests",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, Long.toString(ex.getRetryAfterSeconds()))
+                .body(body);
+    }
 
     /** Handles @Valid validation failures on @RequestBody DTOs. */
     @ExceptionHandler(MethodArgumentNotValidException.class)

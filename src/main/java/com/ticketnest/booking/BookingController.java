@@ -5,6 +5,9 @@ import com.ticketnest.booking.dto.BookingResponse;
 import com.ticketnest.common.dto.PageResponse;
 import com.ticketnest.config.ApiPaths;
 import com.ticketnest.entity.BookingStatus;
+import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -25,6 +28,9 @@ public class BookingController {
     }
 
     @PostMapping
+    @ApiResponse(responseCode = "429", description = "Booking creation rate limit exceeded",
+            headers = @Header(name = "Retry-After", description = "Seconds until another attempt is allowed",
+                    schema = @Schema(type = "integer", format = "int64", minimum = "1")))
     public ResponseEntity<BookingResponse> create(@RequestHeader("Idempotency-Key") String idempotencyKey,
                                                    @Valid @RequestBody BookingCreateRequest request,
                                                    Authentication authentication) {

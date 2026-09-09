@@ -43,6 +43,10 @@ Application endpoints use URI-based major versions. See the
 [API versioning decision](docs/architecture/api-versioning.md) for the route
 policy, tradeoffs, and migration from the original unversioned URLs.
 
+Login and booking creation use configurable in-memory token-bucket limits. See
+the [rate-limiting decision](docs/architecture/rate-limiting.md) for behavior,
+deployment limitations, and the planned Redis migration path.
+
 Compose includes development defaults, so an `.env` file is not required. To
 override the database credentials or JWT secret, copy `.env.example` to `.env`
 and edit its values. The published ports can also be overridden with

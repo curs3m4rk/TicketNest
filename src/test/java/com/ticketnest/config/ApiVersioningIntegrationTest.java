@@ -74,6 +74,8 @@ class ApiVersioningIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$['paths']['/api/v1/bookings']").exists())
                 .andExpect(jsonPath("$['paths']['/api/v1/admin/roles']").exists())
                 .andExpect(jsonPath("$['paths']['/api/v1/auth/register'].post.security.length()").value(0))
+                .andExpect(jsonPath("$['paths']['/api/v1/auth/login'].post.responses['429'].headers['Retry-After']").exists())
+                .andExpect(jsonPath("$['paths']['/api/v1/bookings'].post.responses['429'].headers['Retry-After']").exists())
                 .andExpect(jsonPath("$.security[0].bearerAuth").isArray())
                 .andExpect(jsonPath("$['paths']['/auth/register']").doesNotExist())
                 .andExpect(jsonPath("$['paths']['/api/shows']").doesNotExist());

@@ -11,6 +11,9 @@ import com.ticketnest.auth.dto.TokenResponse;
 import com.ticketnest.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,6 +42,9 @@ public class AuthController {
 
     @PostMapping("/login")
     @SecurityRequirements
+    @ApiResponse(responseCode = "429", description = "Login rate limit exceeded",
+            headers = @Header(name = "Retry-After", description = "Seconds until another attempt is allowed",
+                    schema = @Schema(type = "integer", format = "int64", minimum = "1")))
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         try {
             LoginResponse response = authService.login(request);
